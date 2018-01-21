@@ -82,53 +82,58 @@ class Project1(object):
     def problemC(self):
         classes = ['comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
                    'misc.forsale', 'soc.religion.christian']
-        tfIcf, idx2Word = self.calc_tf_icf(classes)
+        tfIcf, features = self.calc_tf_icf(classes)
         for i in range(0, 4):
-            features = tfIcf[i, :]
-            idx = np.argpartition(features, -10)[-10:]
+            result = tfIcf[i, :]
+            idx = np.argpartition(result, -10)[-10:]
+            idx = idx[np.argsort(result[idx])]
             print("top 10 feature of %s:" % (classes[i])),
-            print([idx2Word[i] for i in idx])
+            print([features[i] for i in idx])
 
 
     def calc_tf_icf(self, classes):
-        CTrainingData = fetch_20newsgroups(subset='train', categories=classes)
-
-        if not self.XTrainCounts or not self.countVec:
+        if not self.countVec:
             self.countVec = CountVectorizer(min_df=self.minDf,
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
-            self.XTrainCounts = self.countVec.fit_transform(CTrainingData.data)
 
-        idx2Word = self.countVec.get_feature_names()
+        features = set()
+        for c in classes:
+            CTrainingData = fetch_20newsgroups(subset='train', categories=[c])
+            self.countVec.fit_transform(CTrainingData.data)
+            Cword = set(self.countVec.vocabulary_.keys())
+            features |= Cword
+
+        features = list(features)
         word2Idx = {}
-        for idx, word in enumerate(idx2Word):
+        for idx, word in enumerate(features):
             word2Idx[word] = idx
 
-        print("number of words we care: ", len(self.countVec.get_feature_names()))
+        print("number of words we care: ", len(features))
 
         # tf_icf = Matrix(#class, #words)
-        tf = np.zeros(shape=(len(classes), self.XTrainCounts.shape[1]))
-        cf = np.zeros(shape=(1, self.XTrainCounts.shape[1]))
+        tf = np.zeros(shape=(len(classes), len(features)))
+        cf = np.zeros(shape=(1, len(features)))
 
         # iterate through the four classes to get term frequency
         for cIdx, c in enumerate(classes):
             CData = fetch_20newsgroups(subset='train', categories=[c])
             CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
-            Cidx2Word = self.countVec.get_feature_names()
-            for idx, word in enumerate(Cidx2Word):
-                tf[cIdx, word2Idx[word]] += CwordCountSum[0, idx]  # first get cf value
+            Cword = self.countVec.get_feature_names()
+            for idx, word in enumerate(Cword):
+                tf[cIdx, word2Idx[word]] += CwordCountSum[0, idx]
 
         for c in list(fetch_20newsgroups(subset='train').target_names):
             CData = fetch_20newsgroups(subset='train', categories=[c])
             CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
-            Cidx2Word = self.countVec.get_feature_names()
-            for idx, word in enumerate(Cidx2Word):
+            Cword = self.countVec.get_feature_names()
+            for idx, word in enumerate(Cword):
                 if word in word2Idx and CwordCountSum[0, idx] > 0:
                     cf[0, word2Idx[word]] += 1
 
         cf[cf == 0] = 1
         icf = np.log2(20 / cf) + 1
 
-        return tf * icf, idx2Word
+        return tf * icf, features
 
 
 def main():
