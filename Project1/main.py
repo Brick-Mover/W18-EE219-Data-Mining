@@ -3,10 +3,26 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
 import numpy as np
+import nltk
+
+nltk.download('stopwords')
+from nltk.stem.snowball import SnowballStemmer
+from nltk.tokenize import RegexpTokenizer
+import math
+
+categories = ['comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
+              'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey']
 
 
-categories = [ 'comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
-               'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey' ]
+class mytokenizer(object):
+    def __init__(self):
+        self.stemmer = SnowballStemmer("english", ignore_stopwords=True)
+        self.tokenizer = RegexpTokenizer(r'\w+')
+
+    def __call__(self, text):
+        tokens = [self.stemmer.stem(token) for token in self.tokenizer.tokenize(text)]
+        return tokens
+
 
 class Project1(object):
 
@@ -14,10 +30,13 @@ class Project1(object):
         self.eightTrainingData = None
         self.minDf = minDf
         self.XTrainCounts = None
+        self.XTrainTfidf = None
+        self.countVec = None
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
     """
+
     def problemA(self):
         self.plot_size()
 
@@ -26,12 +45,12 @@ class Project1(object):
             trainingData = fetch_20newsgroups(subset='train', categories=[category])
             print(category, len(trainingData.filenames))
 
-
     """
     (b) Modeling Text Data: tokenize each document into words. Then, excluding the stop words,
     punctuations, and using stemmed version of words, create a TFxIDF vector representations.
     min_df = 2 or 5
     """
+
     def problemB(self):
         self.model_text_data()
 
@@ -41,32 +60,42 @@ class Project1(object):
             self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories, shuffle=True)
 
         # tokenization
-        countVec = CountVectorizer(min_df=self.minDf, stop_words=text.ENGLISH_STOP_WORDS)
-        self.XTrainCounts = countVec.fit_transform(self.eightTrainingData.data)
+        if not self.countVec:
+            self.countVec = CountVectorizer(min_df=self.minDf,
+                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+
+        if not self.XTrainCounts:
+            self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
         print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainCounts.shape))
 
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
-        XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainCounts)
-        print('Size of tf-idf when minDf is %s: %s' % (self.minDf, XTrainTfidf.shape))
+
+        if not self.XTrainTfidf:
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainCounts)
+        print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
 
     """
     (c) Report 10 most significant terms base on tf-icf
     """
     def problemC(self):
-        classes = [ 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
-                    'misc.forsale', 'soc.religion.christian' ]
-        tfIcf = self.calc_tf_icf(classes)
-
-
+        classes = ['comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
+                   'misc.forsale', 'soc.religion.christian']
+        tfIcf, idx2Word = self.calc_tf_icf(classes)
+        for i in range(0, 4):
+            features = tfIcf[i, :]
+            idx = np.argpartition(features, -10)[-10:]
+            print("top 10 feature of %s:" % (classes[i])),
+            print([idx2Word[i] for i in idx])
 
 
     def calc_tf_icf(self, classes):
         CTrainingData = fetch_20newsgroups(subset='train', categories=classes)
 
         if not self.XTrainCounts or not self.countVec:
-            self.countVec = CountVectorizer(min_df=self.minDf, stop_words=text.ENGLISH_STOP_WORDS)
+            self.countVec = CountVectorizer(min_df=self.minDf,
+                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
             self.XTrainCounts = self.countVec.fit_transform(CTrainingData.data)
 
         idx2Word = self.countVec.get_feature_names()
@@ -74,7 +103,7 @@ class Project1(object):
         for idx, word in enumerate(idx2Word):
             word2Idx[word] = idx
 
-        print(len(self.countVec.get_feature_names()))
+        print("number of words we care: ", len(self.countVec.get_feature_names()))
 
         # tf_icf = Matrix(#class, #words)
         tf = np.zeros(shape=(len(classes), self.XTrainCounts.shape[1]))
@@ -83,28 +112,38 @@ class Project1(object):
         # iterate through the four classes to get term frequency
         for cIdx, c in enumerate(classes):
             CData = fetch_20newsgroups(subset='train', categories=[c])
-            CcountVec = CountVectorizer(min_df=self.minDf, stop_words=text.ENGLISH_STOP_WORDS)
-            CwordCountSum = CcountVec.fit_transform(CData.data).sum(axis=0)
-            Cidx2Word = CcountVec.get_feature_names()
-            print(len(Cidx2Word))
+            CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
+            Cidx2Word = self.countVec.get_feature_names()
             for idx, word in enumerate(Cidx2Word):
-                tf[cIdx, word2Idx[word]] += CwordCountSum[0, idx]   # first get cf value
+                tf[cIdx, word2Idx[word]] += CwordCountSum[0, idx]  # first get cf value
 
         for c in list(fetch_20newsgroups(subset='train').target_names):
             CData = fetch_20newsgroups(subset='train', categories=[c])
-            CcountVec = CountVectorizer(min_df=self.minDf, stop_words=text.ENGLISH_STOP_WORDS)
-            CwordCountSum = CcountVec.fit_transform(CData.data).sum(axis=0)
-            Cidx2Word = CcountVec.get_feature_names()
+            CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
+            Cidx2Word = self.countVec.get_feature_names()
             for idx, word in enumerate(Cidx2Word):
                 if word in word2Idx and CwordCountSum[0, idx] > 0:
                     cf[0, word2Idx[word]] += 1
 
-        
+        cf[cf == 0] = 1
+        icf = np.log2(20 / cf) + 1
+
+        return tf * icf, idx2Word
 
 
 def main():
+    # debug mytokenizer (spam)
+    # corpus = ['stem stems stemming, go stemmed']
+    # # a = Project1(minDf=2)
+    # # countVec = CountVectorizer(stop_words=text.ENGLISH_STOP_WORDS, tokenizer=a.mytokenizer)
+    # countVec = CountVectorizer(stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+    # out = countVec.fit_transform(corpus)
+    # name = countVec.get_feature_names()
+    # print(name)
+
     p = Project1(minDf=2)
     p.problemC()
+
 
 if __name__ == "__main__":
     main()
