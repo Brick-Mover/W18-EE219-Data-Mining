@@ -3,9 +3,15 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
 import numpy as np
-import nltk
+import re
+import string
+from nltk.tag import pos_tag
 
+import nltk
+nltk.download('punkt')
 nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
 import math
@@ -20,8 +26,15 @@ class mytokenizer(object):
         self.tokenizer = RegexpTokenizer(r'\w+')
 
     def __call__(self, text):
-        tokens = [self.stemmer.stem(token) for token in self.tokenizer.tokenize(text)]
-        return tokens
+        tokens = re.sub(r'[^A-Za-z]', " ", text)
+        tokens = re.sub("[,.-:/()?{}*$#&]"," ",tokens)
+        tokens =[word for tk in nltk.sent_tokenize(tokens) for word in nltk.word_tokenize(tk)]
+        new_tokens = []
+        for token in tokens:
+            if re.search('[a-zA-Z]{2,}', token):
+                new_tokens.append(token)     
+        stems = [self.stemmer.stem(t) for t in new_tokens]
+        return stems
 
 
 class Project1(object):
@@ -61,7 +74,7 @@ class Project1(object):
 
         # tokenization
         if not self.countVec:
-            self.countVec = CountVectorizer(min_df=self.minDf,
+            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
 
         if not self.XTrainCounts:
@@ -93,7 +106,7 @@ class Project1(object):
 
     def calc_tf_icf(self, classes):
         if not self.countVec:
-            self.countVec = CountVectorizer(min_df=self.minDf,
+            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
 
         features = set()
