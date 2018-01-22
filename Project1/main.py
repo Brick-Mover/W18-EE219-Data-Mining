@@ -2,6 +2,7 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
+from sklearn.decomposition import TruncatedSVD
 import numpy as np
 import re
 import string
@@ -45,6 +46,7 @@ class Project1(object):
         self.XTrainCounts = None
         self.XTrainTfidf = None
         self.countVec = None
+        self.XLSI = None
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
@@ -148,6 +150,33 @@ class Project1(object):
 
         return tf * icf, features
 
+    """
+    (d) Apply LSI to TF*IDF
+    """
+    def problemD(self):
+        # load data
+        if not self.eightTrainingData:
+            self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories, shuffle=True)
+
+        # tokenization
+        if not self.countVec:
+            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
+                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+
+        if not self.XTrainCounts:
+            self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
+        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainCounts.shape))
+
+        # compute tf-idf
+        tfidfTransformer = TfidfTransformer()
+
+        if not self.XTrainTfidf:
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainCounts)
+        print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
+
+        svd = TruncatedSVD(n_components=50)
+        self.XLSI = svd.fit_transform(self.XTrainTfidf)
+        print(self.XLSI.shape)
 
 def main():
     # debug mytokenizer (spam)
@@ -160,7 +189,10 @@ def main():
     # print(name)
 
     p = Project1(minDf=2)
-    p.problemC()
+    # p.problemA()
+    # p.problemB()
+    # p.problemC()
+    p.problemD()
 
 
 if __name__ == "__main__":
