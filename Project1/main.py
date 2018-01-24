@@ -44,7 +44,7 @@ class Project1(object):
         self.eightTrainingData = None
         self.eightTestingData = None
         self.minDf = minDf
-        self.XTrainingCounts = None
+        self.XTrainingCount = None
         self.XTrainTfidf = None
         self.countVec = None
         self.XLSITraining = None
@@ -64,8 +64,8 @@ class Project1(object):
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
         self.load8TrainingData()
-        if not self.XTrainingCounts:
-            self.XTrainingCounts = self.countVec.fit_transform(self.eightTrainingData.data)
+        if self.XTrainingCount is None:
+            self.XTrainingCount = self.countVec.fit_transform(self.eightTrainingData.data)
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
@@ -93,13 +93,13 @@ class Project1(object):
         # tokenization
         self.createXTrainingCounts()
 
-        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCounts.shape))
+        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCount.shape))
 
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
         if not self.XTrainTfidf:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCounts)
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
 
@@ -172,14 +172,13 @@ class Project1(object):
         # tokenization
         self.createXTrainingCounts()
 
-
-        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCounts.shape))
+        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCount.shape))
 
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
         if not self.XTrainTfidf:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCounts)
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
         svd = TruncatedSVD(n_components=50)
