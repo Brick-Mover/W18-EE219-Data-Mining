@@ -4,18 +4,19 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
 from sklearn import svm
 from sklearn.decomposition import TruncatedSVD
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
+from nltk.stem.snowball import SnowballStemmer
+from nltk.tokenize import RegexpTokenizer
 import numpy as np
 import re
-from typing import List
-
 import nltk
+
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 
-from nltk.stem.snowball import SnowballStemmer
-from nltk.tokenize import RegexpTokenizer
-import math
+
 
 categories = ['comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
               'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey']
@@ -199,8 +200,30 @@ class Project1(object):
         lSVC = svm.LinearSVC(C=1000)
         lSVC.fit(self.XLSITraining, self.yLSITraining)
 
+        yScore = lSVC.decision_function(self.XLSITesting)
+        self.plot_ROC(yScore)
 
 
+    def plot_ROC(self, yScore):
+        # Compute ROC curve and ROC area for each class
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+
+        fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
+        roc_auc = auc(fpr, tpr)
+
+        plt.figure()
+        lw = 2
+        plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+        plt.show()
 
 def main():
     # debug mytokenizer (spam)
@@ -213,9 +236,9 @@ def main():
     # print(name)
 
     p = Project1(minDf=2)
-    p.problemA()
-    p.problemB()
-    p.problemC()
+    # p.problemA()
+    # p.problemB()
+    # p.problemC()
     p.problemD()
 
 
