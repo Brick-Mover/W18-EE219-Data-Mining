@@ -9,9 +9,9 @@ import re
 from typing import List
 
 import nltk
-# nltk.download('punkt')
-# nltk.download('stopwords')
-# nltk.download('averaged_perceptron_tagger')
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
 
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
@@ -44,7 +44,7 @@ class Project1(object):
         self.eightTrainingData = None
         self.eightTestingData = None
         self.minDf = minDf
-        self.XTrainCounts = None
+        self.XTrainingCounts = None
         self.XTrainTfidf = None
         self.countVec = None
         self.XLSITraining = None
@@ -52,17 +52,20 @@ class Project1(object):
 
     def load8TestingData(self):
         if not self.eightTestingData:
-            self.eightTestingData = fetch_20newsgroups(subset='train', categories=categories,
+            self.eightTestingData = fetch_20newsgroups(subset='test', categories=categories,
                                                     remove=('headers','footers','quotes'))
 
     def load8TrainingData(self):
-        if not self.eightTestingData:
-            self.eightTestingData = fetch_20newsgroups(subset='test', categories=categories,
+        if not self.eightTrainingData:
+            self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories,
                                                     remove=('headers','footers','quotes'))
-    def loadCountVec(self):
+    def createXTrainingCounts(self):
         if not self.countVec:
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+        self.load8TrainingData()
+        if not self.XTrainingCounts:
+            self.XTrainingCounts = self.countVec.fit_transform(self.eightTrainingData.data)
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
@@ -88,17 +91,15 @@ class Project1(object):
         # load data
         self.load8TrainingData()
         # tokenization
-        self.loadCountVec()
+        self.createXTrainingCounts()
 
-        if not self.XTrainCounts:
-            self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
-        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainCounts.shape))
+        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCounts.shape))
 
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
         if not self.XTrainTfidf:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainCounts)
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCounts)
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
 
@@ -169,17 +170,16 @@ class Project1(object):
         # load data
         self.load8TrainingData()
         # tokenization
-        self.loadCountVec()
+        self.createXTrainingCounts()
 
-        if not self.XTrainCounts:
-            self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
-        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainCounts.shape))
+
+        print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCounts.shape))
 
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
         if not self.XTrainTfidf:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainCounts)
+            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCounts)
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
         svd = TruncatedSVD(n_components=50)
@@ -214,9 +214,9 @@ def main():
     # print(name)
 
     p = Project1(minDf=2)
-    # p.problemA()
-    # p.problemB()
-    # p.problemC()
+    p.problemA()
+    p.problemB()
+    p.problemC()
     p.problemD()
 
 
