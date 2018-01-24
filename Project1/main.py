@@ -2,16 +2,16 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
+from sklearn import svm
 from sklearn.decomposition import TruncatedSVD
 import numpy as np
 import re
-import string
-from nltk.tag import pos_tag
+from typing import List
 
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('averaged_perceptron_tagger')
 
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
@@ -42,22 +42,37 @@ class Project1(object):
 
     def __init__(self, minDf):
         self.eightTrainingData = None
+        self.eightTestingData = None
         self.minDf = minDf
         self.XTrainCounts = None
         self.XTrainTfidf = None
         self.countVec = None
-        self.XLSI = None
+        self.XLSITraining = None
+        self.yLSITraining = None
+
+    def load8TestingData(self):
+        if not self.eightTestingData:
+            self.eightTestingData = fetch_20newsgroups(subset='train', categories=categories,
+                                                    remove=('headers','footers','quotes'))
+
+    def load8TrainingData(self):
+        if not self.eightTestingData:
+            self.eightTestingData = fetch_20newsgroups(subset='test', categories=categories,
+                                                    remove=('headers','footers','quotes'))
+    def loadCountVec(self):
+        if not self.countVec:
+            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
+                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
     """
-
     def problemA(self):
         self.plot_size()
 
     def plot_size(self):
         for category in categories:
-            trainingData = fetch_20newsgroups(subset='train', categories=[category])
+            trainingData = fetch_20newsgroups(subset='train', categories=[category], remove=('headers','footers','quotes'))
             print(category, len(trainingData.filenames))
 
     """
@@ -71,13 +86,9 @@ class Project1(object):
 
     def model_text_data(self):
         # load data
-        if not self.eightTrainingData:
-            self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories, shuffle=True)
-
+        self.load8TrainingData()
         # tokenization
-        if not self.countVec:
-            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
-                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+        self.loadCountVec()
 
         if not self.XTrainCounts:
             self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
@@ -150,18 +161,15 @@ class Project1(object):
 
         return tf * icf, features
 
+
     """
     (d) Apply LSI to TF*IDF
     """
     def problemD(self):
         # load data
-        if not self.eightTrainingData:
-            self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories, shuffle=True)
-
+        self.load8TrainingData()
         # tokenization
-        if not self.countVec:
-            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
-                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+        self.loadCountVec()
 
         if not self.XTrainCounts:
             self.XTrainCounts = self.countVec.fit_transform(self.eightTrainingData.data)
@@ -175,8 +183,25 @@ class Project1(object):
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
         svd = TruncatedSVD(n_components=50)
-        self.XLSI = svd.fit_transform(self.XTrainTfidf)
-        print(self.XLSI.shape)
+        self.XLSITraining = svd.fit_transform(self.XTrainTfidf)
+        self.yLSITraining = [ x / 4 for x in self.eightTrainingData.target ]
+
+
+    """
+    (e) Use hard margin classifier to separate the
+    documents into ‘Computer Technology’ vs ‘Recreational Activity’ groups
+    """
+    def problemE(self):
+        if not self.XLSITraining or not self.yLSITraining:
+            self.problemD()     # will have to use everything in part D
+
+        self.load8TestingData()
+
+        lSVC = svm.LinearSVC(C=1000)
+        lSVC.fit(self.XLSITraining, self.yLSITraining)
+
+
+
 
 def main():
     # debug mytokenizer (spam)
