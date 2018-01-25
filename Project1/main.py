@@ -266,6 +266,7 @@ class Project1(object):
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
+        plt.savefig('fig/roc_1000.png')
         plt.show()
 
 def main():
