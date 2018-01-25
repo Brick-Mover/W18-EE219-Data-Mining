@@ -254,7 +254,9 @@ class Project1(object):
         yScore = lSVC.decision_function(self.XLSITesting)
 
         #plot ROC
-        self.plot_ROC(yScore)
+        self.plot_ROC(yScore, 'LSI')
+        plt.savefig('fig/roc_lsi_1000.png', bbox_inches='tight')
+        plt.show()
 
         #plot confusion matrix
         class_names = ['Com Tech', 'Recreation']
@@ -262,11 +264,11 @@ class Project1(object):
         conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_lsi_1000.png', bbox_inches='tight')
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_lsi_1000.png', bbox_inches='tight')
         plt.show()
 
         # accuracy
@@ -281,25 +283,137 @@ class Project1(object):
         svm_precision = precision_score(self.yLSITesting, svm_pred)
         print('SVM precision for LSI and Hard Margin is '+str(svm_precision))
 
+
         #
         # NMF, Hard margin SVM
         #
+
+        print(self.XNMFTraining.shape, len(self.yNMFTraining))
+        lSVC.fit(self.XNMFTraining, self.yNMFTraining)
+        yScore = lSVC.decision_function(self.XNMFTesting)
+
+        #plot ROC
+        self.plot_ROC(yScore, 'NMF')
+        plt.savefig('fig/roc_nmf_1000.png', bbox_inches='tight')
+        plt.show()
+
+        #plot confusion matrix
+        class_names = ['Com Tech', 'Recreation']
+        svm_pred = lSVC.predict(self.XNMFTesting)
+        conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
+        plt.savefig('fig/conf_mat_nmf_1000.png', bbox_inches='tight')
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
+                                        title='Normalized confusion matrix')
+        plt.savefig('fig/conf_mat_norm_nmf_1000.png', bbox_inches='tight')
+        plt.show()
+
+        # accuracy
+        svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
+        print('SVM accuracy for NMF and Hard Margin is '+str(svm_accuracy))
+
+        # recall
+        svm_recall = recall_score(self.yNMFTesting, svm_pred)
+        print('SVM recall for NMF and Hard Margin is '+str(svm_recall))
+
+        # precision
+        svm_precision = precision_score(self.yNMFTesting, svm_pred)
+        print('SVM precision for NMF and Hard Margin is '+str(svm_precision))
+
 
         #
         # LSI, soft margin SVM
         #
 
+        lSVC = svm.LinearSVC(C=0.001)
+        print(self.XLSITraining.shape, len(self.yLSITraining))
+        lSVC.fit(self.XLSITraining, self.yLSITraining)
+        yScore = lSVC.decision_function(self.XLSITesting)
+
+        #plot ROC
+        self.plot_ROC(yScore, 'LSI')
+        plt.savefig('fig/roc_lsi_0001.png', bbox_inches='tight')
+        plt.show()
+
+        #plot confusion matrix
+        class_names = ['Com Tech', 'Recreation']
+        svm_pred = lSVC.predict(self.XLSITesting)
+        conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
+        plt.savefig('fig/conf_mat_lsi_0001.png', bbox_inches='tight')
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
+                                        title='Normalized confusion matrix')
+        plt.savefig('fig/conf_mat_norm_lsi_0001.png', bbox_inches='tight')
+        plt.show()
+
+        # accuracy
+        svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
+        print('SVM accuracy for LSI and Soft Margin is '+str(svm_accuracy))
+
+        # recall
+        svm_recall = recall_score(self.yLSITesting, svm_pred)
+        print('SVM recall for LSI and Soft Margin is '+str(svm_recall))
+
+        # precision
+        svm_precision = precision_score(self.yLSITesting, svm_pred)
+        print('SVM precision for LSI and Soft Margin is '+str(svm_precision))
+
+
         #
         # NMF, soft margin SVM
         #
 
-    def plot_ROC(self, yScore):
+        print(self.XNMFTraining.shape, len(self.yNMFTraining))
+        lSVC.fit(self.XNMFTraining, self.yNMFTraining)
+        yScore = lSVC.decision_function(self.XNMFTesting)
+
+        #plot ROC
+        self.plot_ROC(yScore, 'NMF')
+        plt.savefig('fig/roc_nmf_0001.png', bbox_inches='tight')
+        plt.show()
+
+        #plot confusion matrix
+        class_names = ['Com Tech', 'Recreation']
+        svm_pred = lSVC.predict(self.XNMFTesting)
+        conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
+        plt.savefig('fig/conf_mat_nmf_0001.png', bbox_inches='tight')
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
+                                        title='Normalized confusion matrix')
+        plt.savefig('fig/conf_mat_norm_nmf_0001.png', bbox_inches='tight')
+        plt.show()
+
+        # accuracy
+        svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
+        print('SVM accuracy for NMF and Soft Margin is '+str(svm_accuracy))
+
+        # recall
+        svm_recall = recall_score(self.yNMFTesting, svm_pred)
+        print('SVM recall for NMF and Soft Margin is '+str(svm_recall))
+
+        # precision
+        svm_precision = precision_score(self.yNMFTesting, svm_pred)
+        print('SVM precision for NMF and Soft Margin is '+str(svm_precision))
+
+
+
+    def plot_ROC(self, yScore, method):
         # Compute ROC curve and ROC area for each class
         fpr = dict()
         tpr = dict()
         roc_auc = dict()
 
-        fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
+        if method == 'LSI':
+            fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
+        elif method == 'NMF':
+            fpr, tpr, thresholds = roc_curve(self.yNMFTesting, yScore)
+
         roc_auc = auc(fpr, tpr)
 
         plt.figure()
@@ -312,8 +426,6 @@ class Project1(object):
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
-        plt.savefig('fig/roc_1000.png', bbox_inches='tight')
-        plt.show()
 
     # make confusion matrix plot
     def plot_confusion_matrix(self, cmat, classname, normalize=False, title='Confusion matrix'):
