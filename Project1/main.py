@@ -48,6 +48,8 @@ class Project1(object):
         self.minDf = minDf
         self.XTrainingCount = None
         self.XTrainTfidf = None
+        self.XTestingCount = None
+        self.XTestTfidf = None
         self.countVec = None
         self.XLSITraining = None
         self.yLSITraining = None
@@ -59,21 +61,31 @@ class Project1(object):
         self.yNMFTesting = None
 
     def load8TestingData(self):
-        if not self.eightTestingData:
+        if self.eightTestingData is None:
             self.eightTestingData = fetch_20newsgroups(subset='test', categories=categories,
                                                     remove=('headers','footers','quotes'))
 
     def load8TrainingData(self):
-        if not self.eightTrainingData:
+        if self.eightTrainingData is None:
             self.eightTrainingData = fetch_20newsgroups(subset='train', categories=categories,
                                                     remove=('headers','footers','quotes'))
     def createXTrainingCounts(self):
-        if not self.countVec:
+        if self.countVec is None:
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
         self.load8TrainingData()
         if self.XTrainingCount is None:
             self.XTrainingCount = self.countVec.fit_transform(self.eightTrainingData.data)
+
+    def createXTestingCounts(self):
+        if self.XTrainingCount is None:
+            self.createXTrainingCounts()
+
+        print('XTrainingCount size is %s' % (self.XTrainingCount.shape, ))
+
+        self.XTestingCount = self.countVec.transform(self.eightTestingData.data)
+        print('XTestingCount size is %s' % (self.XTestingCount.shape, ))
+
 
     """
     (a) Plot a histogram of the number of training documents per class to check if they are evenly distributed.
@@ -106,7 +118,7 @@ class Project1(object):
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
-        if not self.XTrainTfidf:
+        if self.XTrainTfidf is None:
             self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
@@ -127,7 +139,7 @@ class Project1(object):
 
 
     def calc_tf_icf(self, classes):
-        if not self.countVec:
+        if self.countVec is None:
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
 
@@ -172,7 +184,7 @@ class Project1(object):
 
 
     """
-    (d) Apply LSI to TF*IDF
+    (d) Apply LSI and NMF to TF*IDF
     """
     def problemD(self):
         # load data
@@ -185,9 +197,9 @@ class Project1(object):
         # compute tf-idf
         tfidfTransformer = TfidfTransformer()
 
-        if not self.XTrainTfidf:
+        if self.XTrainTfidf is None:
             self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
-        print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
+        print('Size of train tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
         svd = TruncatedSVD(n_components=50)
         self.XLSITraining = svd.fit_transform(self.XTrainTfidf)
@@ -197,12 +209,32 @@ class Project1(object):
         self.XNMFTraining = nmf.fit_transform(self.XTrainTfidf)
         self.yNMFTraining = self.yLSITraining
 
+        #
+        # apply LSI and NMF to testing data
+        #
+
+        # load test data
+        self.load8TestingData()
+        # tokenization
+        self.createXTestingCounts()
+
+        if self.XTestTfidf is None:
+            self.XTestTfidf = tfidfTransformer.transform(self.XTestingCount)
+        print('Size of test tf-idf when minDf is %s: %s' % (self.minDf, self.XTestTfidf.shape))
+
+        self.XLSITesting = svd.transform(self.XTestTfidf)
+        self.yLSITesting = [ x / 4 for x in self.eightTestingData.target ]
+
+        self.XNMFTesting = nmf.transform(self.XTestTfidf)
+        self.yNMFTesting = self.yLSITesting
+
+
     """
     (e) Use hard margin classifier to separate the
     documents into ‘Computer Technology’ vs ‘Recreational Activity’ groups
     """
     def problemE(self):
-        if not self.XLSITraining or not self.yLSITraining:
+        if self.XLSITraining is None or self.yLSITraining is None:
             self.problemD()     # will have to use everything in part D
 
         self.load8TestingData()
@@ -250,6 +282,7 @@ def main():
     # p.problemB()
     # p.problemC()
     p.problemD()
+    p.problemE()
 
 
 if __name__ == "__main__":
