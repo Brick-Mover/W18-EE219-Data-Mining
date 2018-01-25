@@ -203,7 +203,7 @@ class Project1(object):
 
         svd = TruncatedSVD(n_components=50)
         self.XLSITraining = svd.fit_transform(self.XTrainTfidf)
-        self.yLSITraining = [ x / 4 for x in self.eightTrainingData.target ]
+        self.yLSITraining = [ int(x / 4) for x in self.eightTrainingData.target ]
 
         nmf = NMF(n_components=50)
         self.XNMFTraining = nmf.fit_transform(self.XTrainTfidf)
@@ -223,7 +223,7 @@ class Project1(object):
         print('Size of test tf-idf when minDf is %s: %s' % (self.minDf, self.XTestTfidf.shape))
 
         self.XLSITesting = svd.transform(self.XTestTfidf)
-        self.yLSITesting = [ x / 4 for x in self.eightTestingData.target ]
+        self.yLSITesting = [ int(x / 4) for x in self.eightTestingData.target ]
 
         self.XNMFTesting = nmf.transform(self.XTestTfidf)
         self.yNMFTesting = self.yLSITesting
@@ -240,6 +240,7 @@ class Project1(object):
         self.load8TestingData()
 
         lSVC = svm.LinearSVC(C=1000)
+        print(self.XLSITraining.shape, len(self.yLSITraining))
         lSVC.fit(self.XLSITraining, self.yLSITraining)
 
         yScore = lSVC.decision_function(self.XLSITesting)
