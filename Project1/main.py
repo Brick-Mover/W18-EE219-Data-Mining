@@ -3,6 +3,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction import text
 from sklearn import svm
+from sklearn.decomposition import NMF
 from sklearn.decomposition import TruncatedSVD
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
@@ -50,6 +51,12 @@ class Project1(object):
         self.countVec = None
         self.XLSITraining = None
         self.yLSITraining = None
+        self.XNMFTraining = None
+        self.yNMFTraining = None
+        self.XLSITesting = None
+        self.yLSITesting = None
+        self.XNMFTesting = None
+        self.yNMFTesting = None
 
     def load8TestingData(self):
         if not self.eightTestingData:
@@ -186,6 +193,9 @@ class Project1(object):
         self.XLSITraining = svd.fit_transform(self.XTrainTfidf)
         self.yLSITraining = [ x / 4 for x in self.eightTrainingData.target ]
 
+        nmf = NMF(n_components=50)
+        self.XNMFTraining = nmf.fit_transform(self.XTrainTfidf)
+        self.yNMFTraining = self.yLSITraining
 
     """
     (e) Use hard margin classifier to separate the
