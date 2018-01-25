@@ -256,7 +256,7 @@ class Project1(object):
 
         #plot ROC
         self.plot_ROC(yScore, 'LSI')
-        plt.savefig('fig/roc_lsi_1000.png', bbox_inches='tight')
+        plt.savefig('fig/roc_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
@@ -265,24 +265,24 @@ class Project1(object):
         conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_lsi_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_lsi_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         # accuracy
         svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
-        print('SVM accuracy for LSI and Hard Margin is '+str(svm_accuracy))
+        print('SVM accuracy for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
 
         # recall
         svm_recall = recall_score(self.yLSITesting, svm_pred)
-        print('SVM recall for LSI and Hard Margin is '+str(svm_recall))
+        print('SVM recall for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_recall))
 
         # precision
         svm_precision = precision_score(self.yLSITesting, svm_pred)
-        print('SVM precision for LSI and Hard Margin is '+str(svm_precision))
+        print('SVM precision for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_precision))
 
 
         #
@@ -295,7 +295,7 @@ class Project1(object):
 
         #plot ROC
         self.plot_ROC(yScore, 'NMF')
-        plt.savefig('fig/roc_nmf_1000.png', bbox_inches='tight')
+        plt.savefig('fig/roc_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
@@ -304,24 +304,24 @@ class Project1(object):
         conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_nmf_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_nmf_1000.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         # accuracy
         svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
-        print('SVM accuracy for NMF and Hard Margin is '+str(svm_accuracy))
+        print('SVM accuracy for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
 
         # recall
         svm_recall = recall_score(self.yNMFTesting, svm_pred)
-        print('SVM recall for NMF and Hard Margin is '+str(svm_recall))
+        print('SVM recall for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_recall))
 
         # precision
         svm_precision = precision_score(self.yNMFTesting, svm_pred)
-        print('SVM precision for NMF and Hard Margin is '+str(svm_precision))
+        print('SVM precision for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_precision))
 
 
         #
@@ -335,7 +335,7 @@ class Project1(object):
 
         #plot ROC
         self.plot_ROC(yScore, 'LSI')
-        plt.savefig('fig/roc_lsi_0001.png', bbox_inches='tight')
+        plt.savefig('fig/roc_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
@@ -344,24 +344,24 @@ class Project1(object):
         conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_lsi_0001.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_lsi_0001.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         # accuracy
         svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
-        print('SVM accuracy for LSI and Soft Margin is '+str(svm_accuracy))
+        print('SVM accuracy for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
 
         # recall
         svm_recall = recall_score(self.yLSITesting, svm_pred)
-        print('SVM recall for LSI and Soft Margin is '+str(svm_recall))
+        print('SVM recall for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_recall))
 
         # precision
         svm_precision = precision_score(self.yLSITesting, svm_pred)
-        print('SVM precision for LSI and Soft Margin is '+str(svm_precision))
+        print('SVM precision for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_precision))
 
 
         #
@@ -374,7 +374,7 @@ class Project1(object):
 
         #plot ROC
         self.plot_ROC(yScore, 'NMF')
-        plt.savefig('fig/roc_nmf_0001.png', bbox_inches='tight')
+        plt.savefig('fig/roc_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
@@ -383,24 +383,24 @@ class Project1(object):
         conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_nmf_0001.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.figure()
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_nmf_0001.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
         plt.show()
 
         # accuracy
         svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
-        print('SVM accuracy for NMF and Soft Margin is '+str(svm_accuracy))
+        print('SVM accuracy for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
 
         # recall
         svm_recall = recall_score(self.yNMFTesting, svm_pred)
-        print('SVM recall for NMF and Soft Margin is '+str(svm_recall))
+        print('SVM recall for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_recall))
 
         # precision
         svm_precision = precision_score(self.yNMFTesting, svm_pred)
-        print('SVM precision for NMF and Soft Margin is '+str(svm_precision))
+        print('SVM precision for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_precision))
 
 
 
@@ -506,13 +506,14 @@ def main():
     # name = countVec.get_feature_names()
     # print(name)
 
+    #
     p = Project1(minDf=2)
     # p.problemA()
     # p.problemB()
     # p.problemC()
     # p.problemD()
-    # p.problemE()
-    p.problemF()
+    p.problemE()
+    # p.problemF()
 
 
 if __name__ == "__main__":
