@@ -10,6 +10,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
+from sklearn.model_selection import KFold
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
 import matplotlib.pyplot as plt
@@ -451,6 +452,50 @@ class Project1(object):
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
 
+    """
+    (f) Use a 5-fold cross-validation to find the best value of the parameter
+    """
+    def problemF(self):
+        if self.XLSITraining is None or self.yLSITraining is None:
+            self.problemD()     # will have to use everything in part D
+
+        kf = KFold(n_splits=5, shuffle=True)
+        matrix = [[0]*7 for i in range(5)]
+        
+        #
+        # LSI
+        #
+        i = 0
+        for train_index, test_index in kf.split(self.XLSITraining):
+            X_train, X_test = self.XLSITraining[train_index], self.XLSITraining[test_index]
+            j = 0
+            for k in [-3, -2, -1, 0, 1, 2, 3]:
+                y_train, y_test = self.yLSITraining[train_index], self.yLSITraining[test_index]    
+                SVC = svm.LinearSVC(C=10**k)
+                SVC.fit(X_train, y_train)
+                score = SVC.score(X_test, y_test)
+                matrix[i][j]=score
+                j = j + 1
+            i = i + 1
+
+        avg_value = np.array(matrix)
+        print (avg_value.shape)
+
+        max = 0
+        max_index = 0
+        for i in range (7):
+            mean = np.mean(avg_value[:,i:i+1])
+            if max < mean:
+                max = mean
+                max_index = i
+        print (max, max_index)
+        penalty = [-3, -2, -1, 0, 1, 2, 3]
+        print ('The best penalty value is',10**-penalty[max_index]) 
+
+        #
+        # NMF
+        #
+
 def main():
     # debug mytokenizer (spam)
     # corpus = ['stem stems stemming, go stemmed']
@@ -466,7 +511,8 @@ def main():
     # p.problemB()
     # p.problemC()
     # p.problemD()
-    p.problemE()
+    # p.problemE()
+    p.problemF()
 
 
 if __name__ == "__main__":
