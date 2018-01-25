@@ -5,13 +5,18 @@ from sklearn.feature_extraction import text
 from sklearn import svm
 from sklearn.decomposition import NMF
 from sklearn.decomposition import TruncatedSVD
-import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
+import matplotlib.pyplot as plt
 import numpy as np
-import re
 import nltk
+import itertools
+import re
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -239,13 +244,54 @@ class Project1(object):
 
         self.load8TestingData()
 
+        #
+        # LSI, Hard margin SVM
+        #
+
         lSVC = svm.LinearSVC(C=1000)
         print(self.XLSITraining.shape, len(self.yLSITraining))
         lSVC.fit(self.XLSITraining, self.yLSITraining)
-
         yScore = lSVC.decision_function(self.XLSITesting)
+
+        #plot ROC
         self.plot_ROC(yScore)
 
+        #plot confusion matrix
+        class_names = ['Com Tech', 'Recreation']
+        svm_pred = lSVC.predict(self.XLSITesting)
+        conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
+        plt.savefig('fig/conf_mat_1000.png', bbox_inches='tight')
+        plt.figure()
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
+                                        title='Normalized confusion matrix')
+        plt.savefig('fig/conf_mat_norm_1000.png', bbox_inches='tight')
+        plt.show()
+
+        # accuracy
+        svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
+        print('SVM accuracy for LSI and Hard Margin is '+str(svm_accuracy))
+
+        # recall
+        svm_recall = recall_score(self.yLSITesting, svm_pred)
+        print('SVM recall for LSI and Hard Margin is '+str(svm_recall))
+
+        # precision
+        svm_precision = precision_score(self.yLSITesting, svm_pred)
+        print('SVM precision for LSI and Hard Margin is '+str(svm_precision))
+
+        #
+        # NMF, Hard margin SVM
+        #
+
+        #
+        # LSI, soft margin SVM
+        #
+
+        #
+        # NMF, soft margin SVM
+        #
 
     def plot_ROC(self, yScore):
         # Compute ROC curve and ROC area for each class
@@ -266,8 +312,32 @@ class Project1(object):
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
-        plt.savefig('fig/roc_1000.png')
+        plt.savefig('fig/roc_1000.png', bbox_inches='tight')
         plt.show()
+
+    # make confusion matrix plot
+    def plot_confusion_matrix(self, cmat, classname, normalize=False, title='Confusion matrix'):
+        cmap=plt.cm.Blues
+        plt.imshow(cmat, interpolation='nearest', cmap=cmap)
+        plt.title(title)
+        plt.colorbar()
+
+        tick_marks = np.arange(len(classname))
+        plt.xticks(tick_marks, classname, rotation=45)
+        plt.yticks(tick_marks, classname)
+
+        if normalize:
+            cmat = cmat.astype('float') / cmat.sum(axis=1)[:, np.newaxis]
+
+        print(cmat)
+
+        thresh = cmat.max() / 2.
+        for i, j in itertools.product(range(cmat.shape[0]), range(cmat.shape[1])):
+            plt.text(j, i, cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+
+        plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
 
 def main():
     # debug mytokenizer (spam)
@@ -283,7 +353,7 @@ def main():
     # p.problemA()
     # p.problemB()
     # p.problemC()
-    p.problemD()
+    # p.problemD()
     p.problemE()
 
 
