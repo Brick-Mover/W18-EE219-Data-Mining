@@ -9,7 +9,7 @@ from sklearn.model_selection import KFold
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import GaussianNB
 import matplotlib.pyplot as plt
 import numpy as np
 import nltk
@@ -237,16 +237,19 @@ class Project1(object):
     documents into ‘Computer Technology’ vs ‘Recreational Activity’ groups
     """
     def problemE(self, method, penalty):
-        if self.XLSITraining is None or self.yLSITraining is None:
+        if self.XLSITraining is None or self.yLSITraining is None or \
+            self.XNMFTraining is None or self.yNMFTraining is None:
             self.problemD()     # will have to use everything in part D
 
         self.load8TestingData()
 
+        assert penalty == "hard" or penalty == "soft"
         if penalty == "hard":
             lSVC = svm.LinearSVC(C=1000)
         else:
             lSVC = svm.LinearSVC(C=0.001)
 
+        assert method == "LSI" or method == "NMF"
         if method == "LSI":
             XTrain, yTrain, XTest, yTest = \
                 self.XLSITraining, self.yLSITraining, self.XLSITesting, self.yLSITesting
@@ -299,9 +302,10 @@ class Project1(object):
         tpr = dict()
         roc_auc = dict()
 
-        if method == 'LSI':
+        assert method == "LSI" or method == "NMF"
+        if method == "LSI":
             fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
-        elif method == 'NMF':
+        elif method == "NMF":
             fpr, tpr, thresholds = roc_curve(self.yNMFTesting, yScore)
 
         roc_auc = auc(fpr, tpr)
@@ -387,22 +391,32 @@ class Project1(object):
         #
 
     def problemGH(self, classifier, method):
-        self.load8TrainingData()
-        self.load8TestingData()
+        if self.XLSITraining is None or self.yLSITraining is None or \
+            self.XNMFTraining is None or self.yNMFTraining is None:
+            self.problemD()     # will have to use everything in part D
 
-        if classifier == "G":
-            clf = MultinomialNB()
+        assert classifier == "MultiNB" or classifier == "Logi"
+        if classifier == "MultiNB":
+            clf = GaussianNB()
         else:
             clf = LogisticRegression()
 
+        assert method == "LSI" or method == "NMF"
         if method == "LSI":
-            X = self.XLSITraining
-            y = self.yLSITesting
+            XTrain, yTrain, XTest, yTest = \
+                self.XLSITraining, self.yLSITraining, self.XLSITesting, self.yLSITesting
         else:
-            X = self.XNMFTraining
-            y = self.yNMFTesting
+            XTrain, yTrain, XTest, yTest = \
+                self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
 
-        clf.fit(X, y)
+        clf.fit(XTrain, yTrain)
+        if classifier == "MultiNB":
+            yScore = clf.predict(XTest)
+        else:
+            yScore = clf.decision_function(XTest)
+        self.plot_ROC(yScore, method)
+        plt.savefig('fig/roc_%s_%s_df%d.png' % (classifier, method, self.minDf), bbox_inches='tight')
+        plt.show()
 
 
 def main():
@@ -421,12 +435,12 @@ def main():
     # p.problemB()
     # p.problemC()
     # p.problemD()
-    p.problemE("LSI", "hard")
-    p.problemE("LSI", "soft")
-    p.problemE("NMF", "hard")
-    p.problemE("NMF", "soft")
+    # p.problemE("LSI", "hard")
+    # p.problemE("LSI", "soft")
+    # p.problemE("NMF", "hard")
+    # p.problemE("NMF", "soft")
     # p.problemF()
-    # p.problemGH()
+    p.problemGH("MultiNB", "LSI")
 
 if __name__ == "__main__":
     main()
