@@ -300,11 +300,6 @@ class Project1(object):
 
 
     def plot_ROC(self, yScore, method):
-        # Compute ROC curve and ROC area for each class
-        fpr = dict()
-        tpr = dict()
-        roc_auc = dict()
-
         assert method == "LSI" or method == "NMF"
         if method == "LSI":
             fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
@@ -405,7 +400,7 @@ class Project1(object):
         self.problemE(method, 10**penalty[max_index])
 
 
-    def problemGH(self, classifier, method):
+    def problemGH(self, classifier, method, penalty="l2", reg=1):
         if self.XLSITraining is None or self.yLSITraining is None or \
             self.XNMFTraining is None or self.yNMFTraining is None:
             self.problemD()     # will have to use everything in part D
@@ -414,7 +409,7 @@ class Project1(object):
         if classifier == "MultiNB":
             clf = GaussianNB()
         else:
-            clf = LogisticRegression()
+            clf = LogisticRegression(penalty=penalty, C=reg)
 
         assert method == "LSI" or method == "NMF"
         if method == "LSI":
@@ -430,13 +425,14 @@ class Project1(object):
         else:
             yScore = clf.decision_function(XTest)
         self.plot_ROC(yScore, method)
-        plt.savefig('fig/roc_%s_%s_df%d.png' % (classifier, method, self.minDf), bbox_inches='tight')
+        plt.savefig('fig/roc_%s_%s_penalty_%s_reg_%s_df%d.png' %
+                    (classifier, method, penalty, str(reg), self.minDf), bbox_inches='tight')
         plt.show()
 
 
     def problemI(self, method):
         if self.XLSITraining is None or self.yLSITraining is None or \
-            self.XNMFTraining is None or self.yNMFTraining is None:
+                self.XNMFTraining is None or self.yNMFTraining is None:
             self.problemD()     # will have to use everything in part D
 
         assert method == "LSI" or method == "NMF"
@@ -448,15 +444,21 @@ class Project1(object):
                 self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
 
         for penalty in ["l1", "l2"]:
-            for reg in [0.001, 0.01, 0.1, 1, 10, 100, 1000]:
-                clf = LogisticRegression(penalty=penalty, C=reg)
-                clf.fit(XTrain, yTrain)
-                score = clf.score(XTest, yTest)
-                print("penalty: %s, regularization coefficient: %s, min_df: %d; score: %s" %
-                      (penalty, str(reg), self.minDf, score))
+            for reg in [0.01, 0.1, 1, 10, 100, 1000]:
+                self.problemGH("Logi", "LSI", penalty, reg)
 
 
+    def fetch_data(self, subset, cate):
+        data = fetch_20newsgroups(subset=subset, categories=cate, shuffle=True,
+                                    random_state=42, remove=('headers','footers','quotes'))
+        return data
 
+    def dim_red(self, method):
+        pass
+
+    def problemJ(self):
+        categories_j = ['comp.sys.ibm.pc.hardware','comp.sys.mac.hardware',
+                        'misc.forsale','soc.religion.christian']
 
 
 
@@ -480,11 +482,15 @@ def main():
     # p.problemE("LSI", "soft")
     # p.problemE("NMF", "hard")
     # p.problemE("NMF", "soft")
-
     # p.problemF()
     # p.problemGH("MultiNB", "LSI")
     p.problemI("LSI")
 
+    # p.problemF('LSI')
+    # p.problemF('NMF')
+    # p.problemGH()
+    # p.problemJ()
+    # p.problemGH("MultiNB", "LSI")
 
 if __name__ == "__main__":
     main()
