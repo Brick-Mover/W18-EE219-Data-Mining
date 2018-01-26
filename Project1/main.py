@@ -246,8 +246,10 @@ class Project1(object):
         assert penalty == "hard" or penalty == "soft"
         if penalty == "hard":
             lSVC = svm.LinearSVC(C=1000)
-        else:
+        elif penalty == 'soft':
             lSVC = svm.LinearSVC(C=0.001)
+        else:
+            lSVC = svm.LinearSVC(C=penalty)
 
         assert method == "LSI" or method == "NMF"
         if method == "LSI":
@@ -310,6 +312,10 @@ class Project1(object):
 
         roc_auc = auc(fpr, tpr)
 
+        print(len(fpr))
+        print(len(tpr))
+        print(len(thresholds))
+
         plt.figure()
         lw = 2
         plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
@@ -349,9 +355,17 @@ class Project1(object):
     """
     (f) Use a 5-fold cross-validation to find the best value of the parameter
     """
-    def problemF(self):
-        if self.XLSITraining is None or self.yLSITraining is None:
+    def problemF(self, method):
+
+        if self.XLSITraining is None or self.yLSITraining is None or self.XNMFTraining is None or self.yNMFTraining is None:
             self.problemD()     # will have to use everything in part D
+
+        if method == "LSI":
+            XTrain, yTrain, XTest, yTest = \
+                self.XLSITraining, self.yLSITraining, self.XLSITesting, self.yLSITesting
+        else:
+            XTrain, yTrain, XTest, yTest = \
+                self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
 
         kf = KFold(n_splits=5, shuffle=True)
         matrix = [[0]*7 for i in range(5)]
@@ -360,11 +374,12 @@ class Project1(object):
         # LSI
         #
         i = 0
-        for train_index, test_index in kf.split(self.XLSITraining):
-            X_train, X_test = self.XLSITraining[train_index], self.XLSITraining[test_index]
+        for train_index, test_index in kf.split(XTrain):
+            X_train, X_test = XTrain[train_index], XTrain[test_index]
             j = 0
             for k in [-3, -2, -1, 0, 1, 2, 3]:
-                y_train, y_test = self.yLSITraining[train_index], self.yLSITraining[test_index]    
+                y_train = [ int(x / 4) for x in self.eightTrainingData.target[train_index]]    
+                y_test = [ int(x / 4) for x in self.eightTrainingData.target[test_index]]    
                 SVC = svm.LinearSVC(C=10**k)
                 SVC.fit(X_train, y_train)
                 score = SVC.score(X_test, y_test)
@@ -384,11 +399,10 @@ class Project1(object):
                 max_index = i
         print (max, max_index)
         penalty = [-3, -2, -1, 0, 1, 2, 3]
-        print ('The best penalty value is',10**-penalty[max_index]) 
+        print ('The best penalty value for '+str(method)+' method is',10**penalty[max_index]) 
 
-        #
-        # NMF
-        #
+        self.problemE(method, 10**penalty[max_index])
+
 
     def problemGH(self, classifier, method):
         if self.XLSITraining is None or self.yLSITraining is None or \
@@ -439,8 +453,10 @@ def main():
     # p.problemE("LSI", "soft")
     # p.problemE("NMF", "hard")
     # p.problemE("NMF", "soft")
+
     # p.problemF()
     p.problemGH("MultiNB", "LSI")
+
 
 if __name__ == "__main__":
     main()
