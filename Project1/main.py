@@ -10,6 +10,8 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
+from sklearn.multiclass import OneVsOneClassifier
+from sklearn.multiclass import OneVsRestClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 import nltk
@@ -346,7 +348,7 @@ class Project1(object):
 
         thresh = cmat.max() / 2.
         for i, j in itertools.product(range(cmat.shape[0]), range(cmat.shape[1])):
-            plt.text(j, i, cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+            plt.text(j, i, "%.2f"%cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
 
         plt.tight_layout()
         plt.ylabel('True label')
@@ -437,12 +439,71 @@ class Project1(object):
                                     random_state=42, remove=('headers','footers','quotes'))
         return data
 
-    def dim_red(self, method, ):
+    def dim_red(self, method, data):
+        if self.countVec is None:
+            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
+                                            stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
+        count_vec = self.countVec.fit_transform(data.data)
+        tfidf = TfidfTransformer().fit_transform(count_vec)
 
-    def problemJ(self):
+        assert method == "LSI" or method == "NMF"
+        if method == 'LSI':
+            svd = TruncatedSVD(n_components=50)
+            red_mat = svd.fit_transform(tfidf)
+        else:
+            nmf = NMF(n_components=50)
+            red_mat = nmf.fit_transform(tfidf)
+
+        return red_mat
+
+    def problemJ(self, method, classifier, class_method='OneOne'):
+
         categories_j = ['comp.sys.ibm.pc.hardware','comp.sys.mac.hardware',
                         'misc.forsale','soc.religion.christian']
+        XTrainData = self.fetch_data('train', categories_j)
+        XTestData = self.fetch_data('test', categories_j)
+        XTrain = self.dim_red(method, XTrainData)
+        XTest = self.dim_red(method, XTestData)
 
+        assert classifier == 'NB' or classifier == 'SVM'
+        if classifier == 'NB':
+            clf = GaussianNB().fit(XTrain, XTrainData.target)
+            name_insert = str(method)+'_'+str(classifier)+'_df'+str(self.minDf)
+        else:
+            assert class_method == 'OneOne' or class_method == 'OneRest'
+            if class_method == 'OneOne':
+                clf = OneVsOneClassifier(svm.LinearSVC(C=10, random_state=42)).fit(XTrain, XTrainData.target)
+                name_insert = str(method)+'_'+str(classifier)+'_'+str(class_method)+'_df'+str(self.minDf)
+            else:
+                clf = OneVsRestClassifier(svm.LinearSVC(C=10, random_state=42)).fit(XTrain, XTrainData.target)
+                name_insert = str(method)+'_'+str(classifier)+'_'+str(class_method)+'_df'+str(self.minDf)
+
+        pred = clf.predict(XTest)
+
+        class_names = ['pc_hardware', 'mac_hardware', 'misc_forsale', 'religion_christian']
+        conf_mat = confusion_matrix(XTestData.target, pred)
+        
+        self.plot_confusion_matrix(conf_mat, classname=class_names,
+                              title='Confusion matrix')
+
+        plt.savefig('fig/conf_mat_%s.png' % name_insert, bbox_inches='tight')       
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True,
+                              title='Normalized confusion matrix')
+        plt.savefig('fig/conf_mat_norm_%s.png' % name_insert, bbox_inches='tight')
+
+        plt.show()
+
+        # accuracy
+        accuracy = accuracy_score(XTestData.target, pred)
+        print('Accuracy for %s is: %s' % (name_insert, str(accuracy)))
+
+        # recall
+        recall = recall_score(XTestData.target, pred, average='weighted')
+        print('Recall for %s is: %s' % (name_insert, str(recall)))
+
+        # precision
+        precision = precision_score(XTestData.target, pred, average='weighted')
+        print('Precision for %s is: %s' % (name_insert, str(precision)))
 
 
 def main():
@@ -468,8 +529,13 @@ def main():
     # p.problemF('LSI')
     # p.problemF('NMF')
     # p.problemGH()
-    p.problemJ()
-    p.problemGH("MultiNB", "LSI")
+    # p.problemGH("MultiNB", "LSI")
+    # p.problemJ('LSI', 'NB')
+    p.problemJ('LSI', 'SVM', 'OneOne')
+    p.problemJ('LSI', 'SVM', 'OneRest')
+    p.problemJ('NMF', 'NB')
+    p.problemJ('NMF', 'SVM', 'OneOne')
+    p.problemJ('NMF', 'SVM', 'OneRest')
 
 if __name__ == "__main__":
     main()
