@@ -16,9 +16,7 @@ import nltk
 import itertools
 import re
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
+
 
 
 
@@ -74,6 +72,9 @@ class Project1(object):
                                                     remove=('headers','footers','quotes'))
     def createXTrainingCounts(self):
         if self.countVec is None:
+            nltk.download('punkt')
+            nltk.download('stopwords')
+            nltk.download('averaged_perceptron_tagger')
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
         self.load8TrainingData()
@@ -433,6 +434,32 @@ class Project1(object):
         plt.show()
 
 
+    def problemI(self, method):
+        if self.XLSITraining is None or self.yLSITraining is None or \
+            self.XNMFTraining is None or self.yNMFTraining is None:
+            self.problemD()     # will have to use everything in part D
+
+        assert method == "LSI" or method == "NMF"
+        if method == "LSI":
+            XTrain, yTrain, XTest, yTest = \
+                self.XLSITraining, self.yLSITraining, self.XLSITesting, self.yLSITesting
+        else:
+            XTrain, yTrain, XTest, yTest = \
+                self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
+
+        for penalty in ["l1", "l2"]:
+            for reg in [0.001, 0.01, 0.1, 1, 10, 100, 1000]:
+                clf = LogisticRegression(penalty=penalty, C=reg)
+                clf.fit(XTrain, yTrain)
+                score = clf.score(XTest, yTest)
+                print("penalty: %s, regularization coefficient: %s, min_df: %d; score: %s" %
+                      (penalty, str(reg), self.minDf, score))
+
+
+
+
+
+
 def main():
     # debug mytokenizer (spam)
     # corpus = ['stem stems stemming, go stemmed']
@@ -455,7 +482,8 @@ def main():
     # p.problemE("NMF", "soft")
 
     # p.problemF()
-    p.problemGH("MultiNB", "LSI")
+    # p.problemGH("MultiNB", "LSI")
+    p.problemI("LSI")
 
 
 if __name__ == "__main__":
