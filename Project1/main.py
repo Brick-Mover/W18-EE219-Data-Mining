@@ -1,18 +1,15 @@
 from sklearn.datasets import fetch_20newsgroups
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_extraction import text
 from sklearn import svm
 from sklearn.decomposition import NMF
 from sklearn.decomposition import TruncatedSVD
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import recall_score
-from sklearn.metrics import precision_score
+from sklearn.metrics import roc_curve, auc, confusion_matrix, accuracy_score, recall_score, precision_score
 from sklearn.model_selection import KFold
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
 import matplotlib.pyplot as plt
 import numpy as np
 import nltk
@@ -239,169 +236,61 @@ class Project1(object):
     (e) Use hard margin classifier to separate the
     documents into ‘Computer Technology’ vs ‘Recreational Activity’ groups
     """
-    def problemE(self):
+    def problemE(self, method, penalty):
         if self.XLSITraining is None or self.yLSITraining is None:
             self.problemD()     # will have to use everything in part D
 
         self.load8TestingData()
 
-        #
-        # LSI, Hard margin SVM
-        #
+        if penalty == "hard":
+            lSVC = svm.LinearSVC(C=1000)
+        else:
+            lSVC = svm.LinearSVC(C=0.001)
 
-        lSVC = svm.LinearSVC(C=1000)
-        print(self.XLSITraining.shape, len(self.yLSITraining))
-        lSVC.fit(self.XLSITraining, self.yLSITraining)
-        yScore = lSVC.decision_function(self.XLSITesting)
+        if method == "LSI":
+            XTrain, yTrain, XTest, yTest = \
+                self.XLSITraining, self.yLSITraining, self.XLSITesting, self.yLSITesting
+        else:
+            XTrain, yTrain, XTest, yTest = \
+                self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
 
-        #plot ROC
-        self.plot_ROC(yScore, 'LSI')
-        plt.savefig('fig/roc_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        #plot confusion matrix
-        class_names = ['Com Tech', 'Recreation']
-        svm_pred = lSVC.predict(self.XLSITesting)
-        conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
-                                        title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_lsi_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        # accuracy
-        svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
-        print('SVM accuracy for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
-
-        # recall
-        svm_recall = recall_score(self.yLSITesting, svm_pred)
-        print('SVM recall for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_recall))
-
-        # precision
-        svm_precision = precision_score(self.yLSITesting, svm_pred)
-        print('SVM precision for LSI and Hard Margin with df '+str(self.minDf)+' is '+str(svm_precision))
-
-
-        #
-        # NMF, Hard margin SVM
-        #
-
-        print(self.XNMFTraining.shape, len(self.yNMFTraining))
-        lSVC.fit(self.XNMFTraining, self.yNMFTraining)
-        yScore = lSVC.decision_function(self.XNMFTesting)
-
-        #plot ROC
-        self.plot_ROC(yScore, 'NMF')
-        plt.savefig('fig/roc_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        #plot confusion matrix
-        class_names = ['Com Tech', 'Recreation']
-        svm_pred = lSVC.predict(self.XNMFTesting)
-        conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
-                                        title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_nmf_1000_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        # accuracy
-        svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
-        print('SVM accuracy for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
-
-        # recall
-        svm_recall = recall_score(self.yNMFTesting, svm_pred)
-        print('SVM recall for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_recall))
-
-        # precision
-        svm_precision = precision_score(self.yNMFTesting, svm_pred)
-        print('SVM precision for NMF and Hard Margin with df '+str(self.minDf)+' is '+str(svm_precision))
-
-
-        #
-        # LSI, soft margin SVM
-        #
-
-        lSVC = svm.LinearSVC(C=0.001)
-        print(self.XLSITraining.shape, len(self.yLSITraining))
-        lSVC.fit(self.XLSITraining, self.yLSITraining)
-        yScore = lSVC.decision_function(self.XLSITesting)
+        lSVC.fit(XTrain, yTrain)
+        yScore = lSVC.decision_function(XTest)
 
         #plot ROC
         self.plot_ROC(yScore, 'LSI')
-        plt.savefig('fig/roc_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
+        plt.savefig('fig/roc_%s_%s_df%d.png' % (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
         class_names = ['Com Tech', 'Recreation']
-        svm_pred = lSVC.predict(self.XLSITesting)
-        conf_mat = confusion_matrix(self.yLSITesting, svm_pred)
-        plt.figure()
+        svm_pred = lSVC.predict(XTest)
+        conf_mat = confusion_matrix(yTest, svm_pred)
+
         self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.figure()
+        plt.savefig('fig/conf_mat_%s_%s_df%d.png' %
+                    (method, penalty, self.minDf), bbox_inches='tight')
+
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
                                         title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_lsi_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
+        plt.savefig('fig/conf_mat_norm_%s_%s_df%d.png' %
+                    (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
         # accuracy
-        svm_accuracy = accuracy_score(self.yLSITesting, svm_pred)
-        print('SVM accuracy for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
+        svm_accuracy = accuracy_score(yTest, svm_pred)
+        print('SVM accuracy for %s and %s Margin with df %d is: %s' %
+              (method, penalty, self.minDf, str(svm_accuracy)))
 
         # recall
-        svm_recall = recall_score(self.yLSITesting, svm_pred)
-        print('SVM recall for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_recall))
+        svm_recall = recall_score(yTest, svm_pred)
+        print('SVM recall for %s and %s Margin with df %d is: %s' %
+              (method, penalty, self.minDf, str(svm_recall)))
 
         # precision
-        svm_precision = precision_score(self.yLSITesting, svm_pred)
-        print('SVM precision for LSI and Soft Margin with df '+str(self.minDf)+' is '+str(svm_precision))
-
-
-        #
-        # NMF, soft margin SVM
-        #
-
-        print(self.XNMFTraining.shape, len(self.yNMFTraining))
-        lSVC.fit(self.XNMFTraining, self.yNMFTraining)
-        yScore = lSVC.decision_function(self.XNMFTesting)
-
-        #plot ROC
-        self.plot_ROC(yScore, 'NMF')
-        plt.savefig('fig/roc_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        #plot confusion matrix
-        class_names = ['Com Tech', 'Recreation']
-        svm_pred = lSVC.predict(self.XNMFTesting)
-        conf_mat = confusion_matrix(self.yNMFTesting, svm_pred)
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
-        plt.savefig('fig/conf_mat_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.figure()
-        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
-                                        title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_nmf_0001_df'+str(self.minDf)+'.png', bbox_inches='tight')
-        plt.show()
-
-        # accuracy
-        svm_accuracy = accuracy_score(self.yNMFTesting, svm_pred)
-        print('SVM accuracy for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_accuracy))
-
-        # recall
-        svm_recall = recall_score(self.yNMFTesting, svm_pred)
-        print('SVM recall for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_recall))
-
-        # precision
-        svm_precision = precision_score(self.yNMFTesting, svm_pred)
-        print('SVM precision for NMF and Soft Margin with df '+str(self.minDf)+' is '+str(svm_precision))
-
+        svm_precision = precision_score(yTest, svm_pred)
+        print('SVM precision for %s and %s Margin with df %s is: %s' %
+              (method, penalty, str(self.minDf), str(svm_precision)))
 
 
     def plot_ROC(self, yScore, method):
@@ -430,7 +319,8 @@ class Project1(object):
 
     # make confusion matrix plot
     def plot_confusion_matrix(self, cmat, classname, normalize=False, title='Confusion matrix'):
-        cmap=plt.cm.Blues
+        plt.figure()
+        cmap = plt.cm.Blues
         plt.imshow(cmat, interpolation='nearest', cmap=cmap)
         plt.title(title)
         plt.colorbar()
@@ -496,6 +386,25 @@ class Project1(object):
         # NMF
         #
 
+    def problemGH(self, classifier, method):
+        self.load8TrainingData()
+        self.load8TestingData()
+
+        if classifier == "G":
+            clf = MultinomialNB()
+        else:
+            clf = LogisticRegression()
+
+        if method == "LSI":
+            X = self.XLSITraining
+            y = self.yLSITesting
+        else:
+            X = self.XNMFTraining
+            y = self.yNMFTesting
+
+        clf.fit(X, y)
+
+
 def main():
     # debug mytokenizer (spam)
     # corpus = ['stem stems stemming, go stemmed']
@@ -512,9 +421,12 @@ def main():
     # p.problemB()
     # p.problemC()
     # p.problemD()
-    p.problemE()
+    p.problemE("LSI", "hard")
+    p.problemE("LSI", "soft")
+    p.problemE("NMF", "hard")
+    p.problemE("NMF", "soft")
     # p.problemF()
-
+    # p.problemGH()
 
 if __name__ == "__main__":
     main()
