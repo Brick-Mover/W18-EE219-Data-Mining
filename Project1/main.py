@@ -100,7 +100,7 @@ class Project1(object):
     def plot_size(self):
         for category in categories:
             trainingData = fetch_20newsgroups(subset='train', categories=[category], remove=('headers','footers','quotes'))
-            print(category, len(trainingData.filenames))
+            print(category)
 
     """
     (b) Modeling Text Data: tokenize each document into words. Then, excluding the stop words,
@@ -264,7 +264,7 @@ class Project1(object):
         yScore = lSVC.decision_function(XTest)
 
         #plot ROC
-        self.plot_ROC(yScore, 'LSI')
+        self.plot_ROC(yScore, method, penalty)
         plt.savefig('fig/roc_%s_%s_df%d.png' % (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
@@ -273,33 +273,34 @@ class Project1(object):
         svm_pred = lSVC.predict(XTest)
         conf_mat = confusion_matrix(yTest, svm_pred)
 
-        self.plot_confusion_matrix(conf_mat, classname=class_names, title='Confusion matrix')
+        self.plot_confusion_matrix(conf_mat, classname=class_names,
+                                   title='Confusion matrix %d %s %s margin' % (self.minDf, method, penalty))
         plt.savefig('fig/conf_mat_%s_%s_df%d.png' %
                     (method, penalty, self.minDf), bbox_inches='tight')
 
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
-                                        title='Normalized confusion matrix')
+                                title='Normalized confusion matrix %d %s %s margin' % (self.minDf, method, penalty))
         plt.savefig('fig/conf_mat_norm_%s_%s_df%d.png' %
                     (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
         # accuracy
         svm_accuracy = accuracy_score(yTest, svm_pred)
-        print('SVM accuracy for %s and %s Margin with df %d is: %s' %
+        print('SVM accuracy for %s(%s Margin) with df %d is: %s' %
               (method, penalty, self.minDf, str(svm_accuracy)))
 
         # recall
         svm_recall = recall_score(yTest, svm_pred)
-        print('SVM recall for %s and %s Margin with df %d is: %s' %
+        print('SVM recall for %s(%s Margin) with df %d is: %s' %
               (method, penalty, self.minDf, str(svm_recall)))
 
         # precision
         svm_precision = precision_score(yTest, svm_pred)
-        print('SVM precision for %s and %s Margin with df %s is: %s' %
+        print('SVM precision for %s(%s Margin) with df %s is: %s' %
               (method, penalty, str(self.minDf), str(svm_precision)))
 
 
-    def plot_ROC(self, yScore, method):
+    def plot_ROC(self, yScore, method, penalty):
         assert method == "LSI" or method == "NMF"
         if method == "LSI":
             fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
@@ -320,7 +321,7 @@ class Project1(object):
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('Receiver operating characteristic example')
+        plt.title('min_df=%d %s penalty=%s ROC' % (self.minDf, method, penalty))
         plt.legend(loc="lower right")
 
     # make confusion matrix plot
@@ -424,7 +425,7 @@ class Project1(object):
             yScore = clf.predict(XTest)
         else:
             yScore = clf.decision_function(XTest)
-        self.plot_ROC(yScore, method)
+        self.plot_ROC(yScore, method, penalty)
         plt.savefig('fig/roc_%s_%s_penalty_%s_reg_%s_df%d.png' %
                     (classifier, method, penalty, str(reg), self.minDf), bbox_inches='tight')
         plt.show()
@@ -473,18 +474,25 @@ def main():
     # print(name)
 
     #
-    p = Project1(minDf=2)
-    # p.problemA()
-    # p.problemB()
+    p2 = Project1(minDf=2)
+    p5 = Project1(minDf=5)
+    #p.problemA()
+    # p2.problemC()
+    # p5.problemC()
     # p.problemC()
     # p.problemD()
-    # p.problemE("LSI", "hard")
-    # p.problemE("LSI", "soft")
-    # p.problemE("NMF", "hard")
-    # p.problemE("NMF", "soft")
+    p2.problemE("LSI", "hard")
+    p2.problemE("LSI", "soft")
+    p2.problemE("NMF", "hard")
+    p2.problemE("NMF", "soft")
+
+    p5.problemE("LSI", "hard")
+    p5.problemE("LSI", "soft")
+    p5.problemE("NMF", "hard")
+    p5.problemE("NMF", "soft")
     # p.problemF()
     # p.problemGH("MultiNB", "LSI")
-    p.problemI("LSI")
+    # p.problemI("LSI")
 
     # p.problemF('LSI')
     # p.problemF('NMF')
