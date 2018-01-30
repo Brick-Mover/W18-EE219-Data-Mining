@@ -62,6 +62,7 @@ class Project1(object):
         self.yLSITesting = None
         self.XNMFTesting = None
         self.yNMFTesting = None
+        self.tfidfTransformer =None
 
     def load8TestingData(self):
         if self.eightTestingData is None:
@@ -100,9 +101,23 @@ class Project1(object):
         self.plot_size()
 
     def plot_size(self):
+        value = np.array([])
         for category in categories:
             trainingData = fetch_20newsgroups(subset='train', categories=[category], remove=('headers','footers','quotes'))
-            print(category)
+            value = np.append(value, len(trainingData.data))
+        index = np.arange(8)
+        bar_width = 0.7
+        color = ['pink', 'k', 'y', 'm', 'c', 'r', 'g', 'b']
+        bars = plt.barh(index, value, bar_width, alpha = 0.8, color=color)
+        plt.xlabel("Number of Files")
+        plt.ylabel('Documents')
+        plt.title('Number of Documents per Topic')
+        plt.yticks(index + bar_width/2, ('comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware', 'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey'))
+        plt.xlim(0,700)
+        plt.legend()
+        plt.savefig('f1.png', bbox_inches='tight')
+        plt.show()
+        # print(category)
 
     """
     (b) Modeling Text Data: tokenize each document into words. Then, excluding the stop words,
@@ -122,11 +137,13 @@ class Project1(object):
         print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCount.shape))
 
         # compute tf-idf
-        tfidfTransformer = TfidfTransformer()
+        self.tfidfTransformer = TfidfTransformer()
 
         if self.XTrainTfidf is None:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
+            self.XTrainTfidf = self.tfidfTransformer.fit_transform(self.XTrainingCount)
+
         print('Size of tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
+        # print(self.countVec.get_feature_names()[:1000])
 
 
     """
@@ -201,10 +218,11 @@ class Project1(object):
         print('Size of feature vectors when minDf is %s: %s' % (self.minDf, self.XTrainingCount.shape))
 
         # compute tf-idf
-        tfidfTransformer = TfidfTransformer()
+        if self.tfidfTransformer is None:
+            self.tfidfTransformer = TfidfTransformer()
 
         if self.XTrainTfidf is None:
-            self.XTrainTfidf = tfidfTransformer.fit_transform(self.XTrainingCount)
+            self.XTrainTfidf = self.tfidfTransformer.fit_transform(self.XTrainingCount)
         print('Size of train tf-idf when minDf is %s: %s' % (self.minDf, self.XTrainTfidf.shape))
 
         svd = TruncatedSVD(n_components=50)
@@ -225,7 +243,7 @@ class Project1(object):
         self.createXTestingCounts()
 
         if self.XTestTfidf is None:
-            self.XTestTfidf = tfidfTransformer.transform(self.XTestingCount)
+            self.XTestTfidf = self.tfidfTransformer.transform(self.XTestingCount)
         print('Size of test tf-idf when minDf is %s: %s' % (self.minDf, self.XTestTfidf.shape))
 
         self.XLSITesting = svd.transform(self.XTestTfidf)
@@ -246,7 +264,7 @@ class Project1(object):
 
         self.load8TestingData()
 
-        assert penalty == "hard" or penalty == "soft"
+        # assert penalty == "hard" or penalty == "soft"
         if penalty == "hard":
             lSVC = svm.LinearSVC(C=1000)
         elif penalty == 'soft':
@@ -266,8 +284,9 @@ class Project1(object):
         yScore = lSVC.decision_function(XTest)
 
         #plot ROC
-        self.plot_ROC(yScore, method, penalty)
-        plt.savefig('fig/roc_%s_%s_df%d.png' % (method, penalty, self.minDf), bbox_inches='tight')
+        title = str(method)+" "+str(penalty)+" penalty "+str(self.minDf)+" df"
+        self.plot_ROC(yScore, method, penalty, title)
+        plt.savefig('probef/roc_%s_%s_df%d.png' % (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
         #plot confusion matrix
@@ -276,13 +295,13 @@ class Project1(object):
         conf_mat = confusion_matrix(yTest, svm_pred)
 
         self.plot_confusion_matrix(conf_mat, classname=class_names,
-                                   title='Confusion matrix %d %s %s margin' % (self.minDf, method, penalty))
-        plt.savefig('fig/conf_mat_%s_%s_df%d.png' %
+                                   title=title)
+        plt.savefig('probef/conf_mat_%s_%s_df%d.png' %
                     (method, penalty, self.minDf), bbox_inches='tight')
 
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
-                                title='Normalized confusion matrix %d %s %s margin' % (self.minDf, method, penalty))
-        plt.savefig('fig/conf_mat_norm_%s_%s_df%d.png' %
+                                title=title)
+        plt.savefig('probef/conf_mat_norm_%s_%s_df%d.png' %
                     (method, penalty, self.minDf), bbox_inches='tight')
         plt.show()
 
@@ -302,7 +321,7 @@ class Project1(object):
               (method, penalty, str(self.minDf), str(svm_precision)))
 
 
-    def plot_ROC(self, yScore, method, penalty):
+    def plot_ROC(self, yScore, method, penalty, title):
         assert method == "LSI" or method == "NMF"
         if method == "LSI":
             fpr, tpr, thresholds = roc_curve(self.yLSITesting, yScore)
@@ -311,9 +330,9 @@ class Project1(object):
 
         roc_auc = auc(fpr, tpr)
 
-        print(len(fpr))
-        print(len(tpr))
-        print(len(thresholds))
+        # print(len(fpr))
+        # print(len(tpr))
+        # print(len(thresholds))
 
         plt.figure()
         lw = 2
@@ -323,7 +342,10 @@ class Project1(object):
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('min_df=%d %s penalty=%s ROC' % (self.minDf, method, penalty))
+        if title is None:
+            plt.title('min_df=%d %s penalty=%s ROC' % (self.minDf, method, penalty))
+        else:
+            plt.title(title)
         plt.legend(loc="lower right")
 
     # make confusion matrix plot
@@ -341,11 +363,14 @@ class Project1(object):
         if normalize:
             cmat = cmat.astype('float') / cmat.sum(axis=1)[:, np.newaxis]
 
-        print(cmat)
+        # print(cmat)
 
         thresh = cmat.max() / 2.
         for i, j in itertools.product(range(cmat.shape[0]), range(cmat.shape[1])):
-            plt.text(j, i, "%.2f"%cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+            if normalize == False:
+                plt.text(j, i, cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "%.2f"%cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
 
         plt.tight_layout()
         plt.ylabel('True label')
@@ -424,13 +449,47 @@ class Project1(object):
 
         clf.fit(XTrain, yTrain)
         if classifier == "MultiNB":
-            yScore = clf.predict(XTest)
+            yScore = clf.predict_proba(XTest)[:,1]
+            print(yScore.shape)
+            y_pred = clf.predict(XTest)
         else:
             yScore = clf.decision_function(XTest)
-        self.plot_ROC(yScore, method, penalty)
-        plt.savefig('fig/roc_%s_%s_penalty_%s_reg_%s_df%d.png' %
+            y_pred = clf.predict(XTest)
+            print('%s coef mean for %s(penalty=%s) with reg %s df %d is: %s' %
+                (classifier, method, penalty, str(reg), self.minDf, str(clf.coef_.mean())))
+
+        title = str(classifier)+" "+str(method)+" "+str(penalty)+" reg "+str(reg)+" df "+str(self.minDf)
+        self.plot_ROC(yScore, method, penalty, title)
+        plt.savefig('probghi/roc_%s_%s_penalty_%s_reg_%s_df%d.png' %
                     (classifier, method, penalty, str(reg), self.minDf), bbox_inches='tight')
+        # accuracy
+        accuracy = accuracy_score(yTest, y_pred)
+        print('%s accuracy for %s(penalty=%s) with reg %s df %d is: %s' %
+              (classifier, method, penalty, str(reg), self.minDf, str(accuracy)))
+
+        # recall
+        recall = recall_score(yTest, y_pred)
+        print('%s recall for %s(penalty=%s) with reg %s df %d is: %s' %
+              (classifier, method, penalty, str(reg), self.minDf, str(recall)))
+
+        # precision
+        precision = precision_score(yTest, y_pred)
+        print('%s precision for %s(penalty=%s) with reg %s df %d is: %s' %
+              (classifier, method, penalty, str(reg), self.minDf, str(precision)))
         plt.show()
+
+        class_names = ['Com Tech', 'Recreation']
+        conf_mat = confusion_matrix(yTest, y_pred)
+
+        self.plot_confusion_matrix(conf_mat, classname=class_names,
+                                   title=title)
+        plt.savefig('probghi/conf_mat_%s_%s_%s_reg_%s_df_%d.png' %
+                    (classifier, method, penalty, str(reg), self.minDf), bbox_inches='tight')
+
+        self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True, 
+                                title=title)
+        plt.savefig('probghi/conf_mat_norm_%s_%s_%s_reg_%s_df_%d.png' %
+                    (classifier, method, penalty, str(reg), self.minDf), bbox_inches='tight')
 
 
     def problemI(self, method):
@@ -446,9 +505,14 @@ class Project1(object):
             XTrain, yTrain, XTest, yTest = \
                 self.XNMFTraining, self.yNMFTraining, self.XNMFTesting, self.yNMFTesting
 
-        for penalty in ["l1", "l2"]:
-            for reg in [0.01, 0.1, 1, 10, 100, 1000]:
-                self.problemGH("Logi", "LSI", penalty, reg)
+        if method == 'LSI':
+            for penalty in ["l1", "l2"]:
+                for reg in [0.01, 0.1, 1, 10, 100, 1000]:
+                    self.problemGH("Logi", "LSI", penalty, reg)
+        else:
+            for penalty in ["l1", "l2"]:
+                for reg in [0.01, 0.1, 1, 10, 100, 1000]:
+                    self.problemGH("Logi", "NMF", penalty, reg)
 
 
     def fetch_data(self, subset, cate):
@@ -456,22 +520,27 @@ class Project1(object):
                                     random_state=42, remove=('headers','footers','quotes'))
         return data
 
-    def dim_red(self, method, data):
+    def dim_red(self, method, Train, Test):
         if self.countVec is None:
             self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
-        count_vec = self.countVec.fit_transform(data.data)
-        tfidf = TfidfTransformer().fit_transform(count_vec)
+        count_vec_train = self.countVec.fit_transform(Train.data)
+        count_vec_test = self.countVec.transform(Test.data)
+        tfidfTransformer = TfidfTransformer()
+        tfidf_train = tfidfTransformer.fit_transform(count_vec_train)
+        tfidf_test = tfidfTransformer.transform(count_vec_test)
 
         assert method == "LSI" or method == "NMF"
         if method == 'LSI':
             svd = TruncatedSVD(n_components=50)
-            red_mat = svd.fit_transform(tfidf)
+            red_mat_train = svd.fit_transform(tfidf_train)
+            red_mat_test = svd.transform(tfidf_test)
         else:
             nmf = NMF(n_components=50)
-            red_mat = nmf.fit_transform(tfidf)
+            red_mat_train = nmf.fit_transform(tfidf_train)
+            red_mat_test = nmf.transform(tfidf_test)
 
-        return red_mat
+        return red_mat_train, red_mat_test
 
     def problemJ(self, method, classifier, class_method='OneOne'):
 
@@ -479,15 +548,17 @@ class Project1(object):
                         'misc.forsale','soc.religion.christian']
         XTrainData = self.fetch_data('train', categories_j)
         XTestData = self.fetch_data('test', categories_j)
-        XTrain = self.dim_red(method, XTrainData)
-        XTest = self.dim_red(method, XTestData)
+        XTrain, XTest = self.dim_red(method, XTrainData, XTestData)
+        # XTest = self.dim_red(method, XTestData)
 
         assert classifier == 'NB' or classifier == 'SVM'
         if classifier == 'NB':
             clf = GaussianNB().fit(XTrain, XTrainData.target)
             name_insert = str(method)+'_'+str(classifier)+'_df'+str(self.minDf)
+            title = str(method)+' '+str(classifier)+' '+str(self.minDf)+' df'
         else:
             assert class_method == 'OneOne' or class_method == 'OneRest'
+            title = str(method)+' '+str(classifier)+' '+str(class_method)+' '+str(self.minDf)+' df'
             if class_method == 'OneOne':
                 clf = OneVsOneClassifier(svm.LinearSVC(C=10, random_state=42)).fit(XTrain, XTrainData.target)
                 name_insert = str(method)+'_'+str(classifier)+'_'+str(class_method)+'_df'+str(self.minDf)
@@ -501,12 +572,12 @@ class Project1(object):
         conf_mat = confusion_matrix(XTestData.target, pred)
         
         self.plot_confusion_matrix(conf_mat, classname=class_names,
-                              title='Confusion matrix')
+                              title=title)
 
-        plt.savefig('fig/conf_mat_%s.png' % name_insert, bbox_inches='tight')       
+        plt.savefig('probj/conf_mat_%s.png' % name_insert, bbox_inches='tight')       
         self.plot_confusion_matrix(conf_mat, classname=class_names, normalize=True,
-                              title='Normalized confusion matrix')
-        plt.savefig('fig/conf_mat_norm_%s.png' % name_insert, bbox_inches='tight')
+                              title=title)
+        plt.savefig('probj/conf_mat_norm_%s.png' % name_insert, bbox_inches='tight')
 
         plt.show()
 
@@ -533,37 +604,41 @@ def main():
     # name = countVec.get_feature_names()
     # print(name)
 
-    #
     p2 = Project1(minDf=2)
     p5 = Project1(minDf=5)
-    #p.problemA()
+    # p2.problemA()
+    # p2.problemB()
+    # p5.problemB()
     # p2.problemC()
     # p5.problemC()
-    # p.problemC()
-    # p.problemD()
-    p2.problemE("LSI", "hard")
-    p2.problemE("LSI", "soft")
-    p2.problemE("NMF", "hard")
-    p2.problemE("NMF", "soft")
+    # p2.problemD()
+    # p5.problemD()
+    # p2.problemE("LSI", "hard")
+    # p5.problemE("LSI", "hard")
+    # p2.problemE("NMF", "hard")
+    # p2.problemE("LSI", "soft")
+    # p5.problemE("LSI", "soft")
+    # p2.problemE("NMF", "soft")
 
-    p5.problemE("LSI", "hard")
-    p5.problemE("LSI", "soft")
-    p5.problemE("NMF", "hard")
-    p5.problemE("NMF", "soft")
-    # p.problemF()
-    # p.problemGH("MultiNB", "LSI")
-    # p.problemI("LSI")
+    # p2.problemF('LSI')
+    # p5.problemF('LSI')
+    # p2.problemF('NMF')
 
-    # p.problemF('LSI')
-    # p.problemF('NMF')
-    # p.problemGH()
-    # p.problemGH("MultiNB", "LSI")
-    p.problemJ('LSI', 'NB')
-    p.problemJ('LSI', 'SVM', 'OneOne')
-    p.problemJ('LSI', 'SVM', 'OneRest')
-    p.problemJ('NMF', 'NB')
-    p.problemJ('NMF', 'SVM', 'OneOne')
-    p.problemJ('NMF', 'SVM', 'OneRest')
+    # p2.problemGH('MultiNB', 'NMF')
+    # p2.problemGH('Logi', 'LSI')
+    # p5.problemGH('Logi', 'LSI')
+    # p2.problemGH('Logi', 'NMF')
+
+    p2.problemI('LSI')
+    p5.problemI('LSI')
+    p2.problemI('NMF')
+    # p2.problemJ('LSI', 'NB')
+    # p2.problemJ('LSI', 'SVM', 'OneOne')
+    # p2.problemJ('LSI', 'SVM', 'OneRest')
+    # p2.problemJ('NMF', 'NB')
+    # p2.problemJ('NMF', 'SVM', 'OneOne')
+    # p2.problemJ('NMF', 'SVM', 'OneRest')
+
 
 if __name__ == "__main__":
     main()
