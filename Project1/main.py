@@ -162,15 +162,14 @@ class Project1(object):
 
 
     def calc_tf_icf(self, classes):
-        if self.countVec is None:
-            self.countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
+        countVec = CountVectorizer(min_df=self.minDf, analyzer='word',
                                             stop_words=text.ENGLISH_STOP_WORDS, tokenizer=mytokenizer())
 
         features = set()
         for c in classes:
             CTrainingData = fetch_20newsgroups(subset='train', categories=[c])
-            self.countVec.fit_transform(CTrainingData.data)
-            Cword = set(self.countVec.vocabulary_.keys())
+            countVec.fit_transform(CTrainingData.data)
+            Cword = set(countVec.vocabulary_.keys())
             features |= Cword
 
         features = list(features)
@@ -187,15 +186,15 @@ class Project1(object):
         # iterate through the four classes to get term frequency
         for cIdx, c in enumerate(classes):
             CData = fetch_20newsgroups(subset='train', categories=[c])
-            CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
-            Cword = self.countVec.get_feature_names()
+            CwordCountSum = countVec.fit_transform(CData.data).sum(axis=0)
+            Cword = countVec.get_feature_names()
             for idx, word in enumerate(Cword):
                 tf[cIdx, word2Idx[word]] += CwordCountSum[0, idx]
 
         for c in list(fetch_20newsgroups(subset='train').target_names):
             CData = fetch_20newsgroups(subset='train', categories=[c])
-            CwordCountSum = self.countVec.fit_transform(CData.data).sum(axis=0)
-            Cword = self.countVec.get_feature_names()
+            CwordCountSum = countVec.fit_transform(CData.data).sum(axis=0)
+            Cword = countVec.get_feature_names()
             for idx, word in enumerate(Cword):
                 if word in word2Idx and CwordCountSum[0, idx] > 0:
                     cf[0, word2Idx[word]] += 1
@@ -606,12 +605,12 @@ def main():
 
     p2 = Project1(minDf=2)
     p5 = Project1(minDf=5)
-    # p2.problemA()
-    # p2.problemB()
-    # p5.problemB()
-    # p2.problemC()
+    p2.problemA()
+    p2.problemB()
+    #p5.problemB()
+    p2.problemC()
     # p5.problemC()
-    # p2.problemD()
+    p2.problemD()
     # p5.problemD()
     # p2.problemE("LSI", "hard")
     # p5.problemE("LSI", "hard")
@@ -629,9 +628,9 @@ def main():
     # p5.problemGH('Logi', 'LSI')
     # p2.problemGH('Logi', 'NMF')
 
-    p2.problemI('LSI')
-    p5.problemI('LSI')
-    p2.problemI('NMF')
+    # p2.problemI('LSI')
+    # p5.problemI('LSI')
+    # p2.problemI('NMF')
     # p2.problemJ('LSI', 'NB')
     # p2.problemJ('LSI', 'SVM', 'OneOne')
     # p2.problemJ('LSI', 'SVM', 'OneRest')
