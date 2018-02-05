@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.cluster import KMeans
 from sklearn import metrics
-from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD, NMF
 
 
 min_df = 3
@@ -17,11 +17,11 @@ eightTrainingData = fetch_20newsgroups(subset='train', categories=categories,
 eightLabels = eightTrainingData.target
 
 def main():
-    print("=" * 40)
+    print("=" * 60)
     """
     Problem 1: Building the TF-IDF matrix.
     """
-    print('-' * 40)
+    print('-' * 60)
     pipe = Pipeline( [
         ('vect', CountVectorizer(min_df=3, analyzer='word', stop_words='english')),
         ('tfidf', TfidfTransformer())
@@ -32,7 +32,7 @@ def main():
     """
     Problem 2: Apply K-means clustering with k = 2 using the TF-IDF data.
     """
-    print('-' * 40)
+    print('-' * 60)
     km = KMeans(n_clusters=2)
     km.fit(TFIDF)
 
@@ -43,14 +43,29 @@ def main():
     print("Adjusted mutual info score: %.3f" % metrics.adjusted_mutual_info_score(eightLabels, km.labels_))
 
     """
-    Problem 3: Apply K-means clustering with k = 2 using the TF-IDF data.
+    Problem 3: Apply SVD, NMF to TFIDF and plot measure scores vs n_components.
     """
-    pca = PCA(n_components=1000)
-    pca.fit(TFIDF)
-    ratios = pca.explained_variance_ratio_
+    print('-' * 60)
+
+    # SVD
+    svd = TruncatedSVD(n_components=1000)
+    svd.fit_transform(TFIDF)
+    ratios = svd.explained_variance_ratio_
+    np.sort(ratios)
+    print(ratios[0:10])
+
+    # NMF
+    nmf = NMF(n_components=1000)
+    nmf.fit_transform(TFIDF)
+    svd.fit_transform(TFIDF)
+    ratios = svd.explained_variance_ratio_
     np.sort(ratios)
 
-    print("=" * 40)
+
+
+
+
+    print("=" * 60)
 
 if __name__ == "__main__":
     main()
