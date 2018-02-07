@@ -11,10 +11,11 @@ min_df = 3
 categories = ['comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
               'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey']
 
-eightTrainingData = fetch_20newsgroups(subset='train', categories=categories,
+# fetch all the data
+eightTrainingData = fetch_20newsgroups(subset='all', categories=categories,
                                 remove=('headers','footers','quotes'))
 
-eightLabels = eightTrainingData.target
+eightLabels = [ 1 - int(x / 4) for x in eightTrainingData.target ]
 
 def main():
     print("=" * 60)
