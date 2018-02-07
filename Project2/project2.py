@@ -49,6 +49,19 @@ def plot_contingency_matrix(label_true, label_pred, classname, normalize=False, 
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
+# ys has the format [[y1,y1_label],[y2, y2_label]]
+def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False):
+    for y, label in ys:
+        plt.plot(x, y, label=label)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if xticks is not None:
+        plt.xticks(x)
+    plt.legend()
+    if grid == True:
+        plt.grid()
+    plt.show()
+
 def main():
     print("=" * 60)
     """
@@ -94,11 +107,22 @@ def main():
     print('-' * 60)
 
     # SVD
-    svd = TruncatedSVD(n_components=1000)
+    # SVD
+    rank = 1000
+    svd = TruncatedSVD(n_components=rank)
     svd.fit_transform(TFIDF)
     ratios = svd.explained_variance_ratio_
+    # print(ratios)  
     np.sort(ratios)
+    print(ratios.shape)
     print(ratios[0:10])
+
+    # make the plot
+    x = np.array(range(1,rank+1))
+    y = [[ratios,'Percent of Retained Variance']]
+    xlabel = 'Rank r'
+    ylabel = 'Percent of Retained Variance'
+    make_plot(x, y, xlabel, ylabel)
 
     # NMF
     # nmf = NMF(n_components=1000)
