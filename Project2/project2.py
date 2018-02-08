@@ -8,6 +8,7 @@ v_measure_score, adjusted_rand_score, adjusted_mutual_info_score)
 from sklearn.decomposition import TruncatedSVD, NMF
 import matplotlib.pyplot as plt
 import itertools
+import os.path
 
 
 min_df = 3
@@ -48,9 +49,10 @@ def plot_contingency_matrix(label_true, label_pred, classname, normalize=False, 
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    plt.show()
 
 # ys has the format [[y1,y1_label],[y2, y2_label]]
-def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False):
+def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
     for y, label in ys:
         plt.plot(x, y, label=label)
     plt.xlabel(xlabel)
@@ -60,7 +62,43 @@ def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False):
     plt.legend()
     if grid == True:
         plt.grid()
+    if title is not None:
+        plt.title(title)
     plt.show()
+
+def prob_3a_ii(method, XData):
+    ranks = np.array([1,2,3,5,10,20,50,100,300])
+    np_hg = np.array([])
+    np_cp = np.array([])
+    np_vm = np.array([])
+    np_ari = np.array([])
+    np_ami = np.array([])
+    class_names = ['Com Tech', 'Recreation']
+
+    for r in ranks:
+        data = XData[:,:r]
+        km = KMeans(n_clusters=2)
+        km.fit(data)
+
+        title = str(method)+' Rank '+str(r)
+        plot_contingency_matrix(eightLabels, km.labels_, class_names, 
+                               normalize=False, title=title)
+
+        np_hg = np.append(np_hg, homogeneity_score(eightLabels, km.labels_))
+        np_cp = np.append(np_cp, completeness_score(eightLabels, km.labels_))
+        np_vm = np.append(np_vm, v_measure_score(eightLabels, km.labels_))
+        np_ari = np.append(np_ari, adjusted_rand_score(eightLabels, km.labels_))
+        np_ami = np.append(np_ami, adjusted_mutual_info_score(eightLabels, km.labels_))
+
+    x = ranks
+    ys = [[np_hg, 'Homogeneity'],[np_cp, 'Completeness'], [np_vm, 'V_measure']]
+    xlabel = 'Rank r'
+    ylabel = 'Score'
+    title = str(method)+' Score'
+    make_plot(x, ys, xlabel, ylabel, title=title)
+    ys = [[np_ari, 'Adjusted Rand Index'], [np_ami, 'Adjusted Mutual Info']]
+    make_plot(x, ys, xlabel, ylabel, title=title)
+    return np_hg, np_cp, np_vm, np_ari, np_ami
 
 def main():
     print("=" * 60)
@@ -86,10 +124,9 @@ def main():
     Problem 2a
     """
 
-    class_names = ['Recreation', 'Com Tech']
+    class_names = ['Com Tech', 'Recreation']
     title = 'TFIDF_k=2'
     plot_contingency_matrix(eightLabels, km.labels_, class_names, normalize=False, title=title)
-    plt.show()
 
     """
     Problem 2b
@@ -107,29 +144,39 @@ def main():
     print('-' * 60)
 
     # SVD
-    # SVD
     rank = 1000
     svd = TruncatedSVD(n_components=rank)
-    svd.fit_transform(TFIDF)
-    ratios = svd.explained_variance_ratio_
-    # print(ratios)  
-    np.sort(ratios)
-    print(ratios.shape)
-    print(ratios[0:10])
+    svd_X = svd.fit_transform(TFIDF)
 
-    # make the plot
+    ratios = np.array([])
+    sum = 0
+    for ratio in svd.explained_variance_ratio_:
+        sum = sum + ratio
+        ratios = np.append(ratios, sum)
+    print(ratios[0:10])
     x = np.array(range(1,rank+1))
     y = [[ratios,'Percent of Retained Variance']]
     xlabel = 'Rank r'
     ylabel = 'Percent of Retained Variance'
     make_plot(x, y, xlabel, ylabel)
 
+    # problem 3 (a) ii
+    # SVD
+    prob_3a_ii('SVD', svd_X)
+    
     # NMF
-    # nmf = NMF(n_components=1000)
-    # nmf.fit_transform(TFIDF)
-    # svd.fit_transform(TFIDF)
-    # ratios = svd.explained_variance_ratio_
-    # np.sort(ratios)
+    if os.path.isfile('nmf_r300.npy'):
+        nmf_X = np.load('nmf_r300.npy')
+    else:
+        nmf = NMF(n_components=300)
+        nmf_X = nmf.fit_transform(TFIDF)
+        # NMF with r = 300 runs very slowly, save the np file for quicker 
+        np.save('nmf_r300', nmf_X)
+
+    prob_3a_ii('NMF', nmf_X)
+
+    # problem 4 (a)
+
 
     print("=" * 60)
 
