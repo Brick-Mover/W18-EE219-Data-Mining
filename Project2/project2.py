@@ -8,18 +8,15 @@ v_measure_score, adjusted_rand_score, adjusted_mutual_info_score)
 from sklearn.decomposition import TruncatedSVD, NMF
 import matplotlib.pyplot as plt
 import itertools
-import os.path
 
 
 min_df = 3
 categories = ['comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware',
               'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey']
 
-# fetch all the data
-eightTrainingData = fetch_20newsgroups(subset='all', categories=categories,
-                                remove=('headers','footers','quotes'))
-
-eightLabels = [ int(x / 4) for x in eightTrainingData.target ]
+print("fetch data")
+eightTrainingData = fetch_20newsgroups(subset='all', categories=categories)
+eightLabels = [int(x / 4) for x in eightTrainingData.target]
 
 # plot contingency matrix plot
 def plot_contingency_matrix(label_true, label_pred, classname, normalize=False, title='Contingency Matrix'):
@@ -66,7 +63,7 @@ def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
         plt.title(title)
     plt.show()
 
-def prob_3a_ii(method, XData):
+def prob_3a_ii(method, XData=None, tfidf=None):
     ranks = np.array([1,2,3,5,10,20,50,100,300])
     np_hg = np.array([])
     np_cp = np.array([])
@@ -76,8 +73,12 @@ def prob_3a_ii(method, XData):
     class_names = ['Com Tech', 'Recreation']
 
     for r in ranks:
-        data = XData[:,:r]
-        km = KMeans(n_clusters=2)
+        if method == 'NMF':
+            nmf = NMF(n_components=r, max_iter=(50 if r==300 else 200))
+            data = nmf.fit_transform(tfidf)
+        else:
+            data = XData[:,:r]
+        km = KMeans(n_clusters=2, max_iter=100, n_init=20)
         km.fit(data)
 
         title = str(method)+' Rank '+str(r)
@@ -100,8 +101,49 @@ def prob_3a_ii(method, XData):
     make_plot(x, ys, xlabel, ylabel, title=title)
     return np_hg, np_cp, np_vm, np_ari, np_ami
 
+def visualize_in_2D(method, data, bestR):
+    reduced_data = data[:,:bestR]
+    km = KMeans(n_clusters=2, max_iter=100, n_init=20)
+    km.fit(reduced_data)
+
+    # Step size of the mesh. Decrease to increase the quality of the VQ.
+    h = .02     # point in the mesh [x_min, x_max]x[y_min, y_max].
+
+    # Plot the decision boundary. For that, we will assign a color to each
+    x_min, x_max = reduced_data[:, 0].min() - 1, reduced_data[:, 0].max() + 1
+    y_min, y_max = reduced_data[:, 1].min() - 1, reduced_data[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+    # Obtain labels for each point in mesh. Use last trained model.
+    Z = km.predict(np.c_[xx.ravel(), yy.ravel()])
+
+    # Put the result into a color plot
+    Z = Z.reshape(xx.shape)
+    plt.figure(1)
+    plt.clf()
+    plt.imshow(Z, interpolation='nearest',
+               extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+               cmap=plt.cm.Paired,
+               aspect='auto', origin='lower')
+
+    plt.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
+    # Plot the centroids as a white X
+    centroids = km.cluster_centers_
+    plt.scatter(centroids[:, 0], centroids[:, 1],
+                marker='x', s=169, linewidths=3,
+                color='w', zorder=10)
+    plt.title('K-means clustering on the digits dataset ('+str(method)+'-reduced data)\n'
+              'Centroids are marked with white cross')
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
+    plt.xticks(())
+    plt.yticks(())
+    plt.show()
+
 def main():
+
     print("=" * 60)
+
     """
     Problem 1: Building the TF-IDF matrix.
     """
@@ -114,24 +156,19 @@ def main():
     print("p1: dimension of the TF-IDF matrix is: ", TFIDF.shape)
 
     """
-    Problem 2: Apply K-means clustering with k = 2 using the TF-IDF data.
+    Problem 2b: Apply K-means clustering with k = 2 using the TF-IDF data.
     """
     print('-' * 60)
-    km = KMeans(n_clusters=2)
+    km = KMeans(n_clusters=2, max_iter=100, n_init=20)
     km.fit(TFIDF)
-
-    """
-    Problem 2a
-    """
 
     class_names = ['Com Tech', 'Recreation']
     title = 'TFIDF_k=2'
     plot_contingency_matrix(eightLabels, km.labels_, class_names, normalize=False, title=title)
 
     """
-    Problem 2b
+    Problem 2b: Apply K-means clustering with k = 2 using the TF-IDF data.
     """
-
     print("Homogeneity: %0.3f" % homogeneity_score(eightLabels, km.labels_))
     print("Completeness: %0.3f" % completeness_score(eightLabels, km.labels_))
     print("V-measure: %0.3f" % v_measure_score(eightLabels, km.labels_))
@@ -159,26 +196,30 @@ def main():
     xlabel = 'Rank r'
     ylabel = 'Percent of Retained Variance'
     make_plot(x, y, xlabel, ylabel)
+    print(type(svd_X))
+    print(svd_X[:,:2].shape)
 
     # problem 3 (a) ii
     # SVD
-    prob_3a_ii('SVD', svd_X)
-    
-    # NMF
-    if os.path.isfile('nmf_r300.npy'):
-        nmf_X = np.load('nmf_r300.npy')
-    else:
-        nmf = NMF(n_components=300)
-        nmf_X = nmf.fit_transform(TFIDF)
-        # NMF with r = 300 runs very slowly, save the np file for quicker 
-        np.save('nmf_r300', nmf_X)
+    hg, cp, vm, ari, ami = prob_3a_ii('SVD', svd_X)
 
-    prob_3a_ii('NMF', nmf_X)
+    hg, cp, vm, ari, ami = prob_3a_ii('NMF', tfidf=TFIDF)
 
-    # problem 4 (a)
+    # 4(a)
+    best_SVD = 2
+    best_NMF = 2
+
+    # visualize SVD
+    visualize_in_2D('SVD', svd_X, best_SVD)
+
+    # visualize NMF
+    nmf = NMF(n_components=best_NMF)
+    nmf_X = nmf.fit_transform(TFIDF)
+    visualize_in_2D('NMF', nmf_X, best_NMF)
 
 
     print("=" * 60)
+
 
 if __name__ == "__main__":
     main()
