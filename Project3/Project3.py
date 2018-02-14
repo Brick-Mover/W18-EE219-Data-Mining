@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+import matplotlib.pyplot as plt
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -63,3 +64,19 @@ rating_avl = np.count_nonzero(R)
 rating_psb = np.prod(R.shape)
 sparsity = rating_avl/rating_psb
 print(sparsity)
+
+# Question 2
+
+# plot a historgram showing frequency of rating values
+ratings_arr = []  
+for r in range(R_row):
+	for c in range(R_col): 
+		if R[r,c]!=0.0:
+			ratings_arr.append(R[r,c])
+binwidth = 0.5
+print (min(ratings_arr))
+print (max(ratings_arr))
+
+plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
+plt.show()
+
