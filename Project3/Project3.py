@@ -80,3 +80,20 @@ print (max(ratings_arr))
 plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
 plt.show()
 
+# Question 3
+
+l = [0 for x in range(0, R_col)] #R_row
+
+for r in range(R_row):
+  for c in range(R_col): 
+    if R[r,c]!=0.0:
+    	l[c] = l[c] + 1
+
+l_no_zero = [val for val in l if val!=0]
+l_no_zero.sort(reverse = True)
+
+plt.plot([i+1 for i in range(0, len(l_no_zero))], l_no_zero)
+plt.show()
+
+
+
