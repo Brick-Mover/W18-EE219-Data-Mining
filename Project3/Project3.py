@@ -1,29 +1,34 @@
 import numpy as np
+import pandas as pd
 import csv
 import matplotlib.pyplot as plt
+from surprise.prediction_algorithms.knns import KNNWithMeans
+from surprise.model_selection import cross_validate
+from surprise import Dataset,Reader
+
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
-# 
-# Jupyter Notebook for a better view only, you can edit/run code 
+#
+# Jupyter Notebook for a better view only, you can edit/run code
 # on your local Jupyter Notebook, but please push/sync code through
 # this Project3.py only!!!
-# 
+#
 # (You can upload your own Jupyter Notebook if you want, just name
 #  as Project3_yourname.ipynb)
-# 
+#
 # This is because we have not found a tool (like ShareLatex) to
 # share/edit/run upyter Notebook simultaneously. Although
 # Jupyter Notebook is really intuitive and convenient to use
-# 
-# !!!!!!!!!!!!!!!!!!!!!!!!! 
-# 
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!
+#
 
-# 
+#
 # Create R matrix
-# 
+#
 data = np.loadtxt('ml-latest-small/ratings.csv',
-           delimiter=',', skiprows=1, usecols=(0,1,2))
+                  delimiter=',', skiprows=1, usecols=(0,1,2))
 
 # tranform data type (from float to int for first 2 rows)
 # 'userId', 'movieId', 'rating'
@@ -32,8 +37,8 @@ row_movieId = data[:,1:2].astype(int)
 row_rating = data[:,2:3]
 R_row = np.amax(row_userId)
 R_col = np.amax(row_movieId)
-print('Matrix has row size (users) %s, and col size (movies) %s' 
-          % (R_row, R_col))
+print('Matrix has row size (users) %s, and col size (movies) %s'
+      % (R_row, R_col))
 R = np.zeros([R_row, R_col])
 for i in range(row_userId.size):
     r = row_userId[i] - 1
@@ -43,9 +48,9 @@ for i in range(row_userId.size):
 
 assert(R[1,109]==4.0)
 
-# 
+#
 # Question 1
-# 
+#
 
 # Sparsity = Total number of available ratings
 #           / Total number of possible ratings
@@ -68,15 +73,39 @@ print(sparsity)
 # Question 2
 
 # plot a historgram showing frequency of rating values
-ratings_arr = []  
-for r in range(R_row):
-	for c in range(R_col): 
-		if R[r,c]!=0.0:
-			ratings_arr.append(R[r,c])
-binwidth = 0.5
-print (min(ratings_arr))
-print (max(ratings_arr))
+# ratings_arr = []
+# for r in range(R_row):
+#     for c in range(R_col):
+#         if R[r,c]!=0.0:
+#             ratings_arr.append(R[r,c])
+# binwidth = 0.5
+# print (min(ratings_arr))
+# print (max(ratings_arr))
+#
+# plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
+# plt.show()
 
-plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
-plt.show()
+def Q10():
+    sim_options = {'name': 'pearson_baseline',
+                   'shrinkage': 0  # no shrinkage
+                 }
 
+    ratings_dict = {
+        'movieID': row_movieId.transpose().tolist()[0],
+        'userID': row_userId.transpose().tolist()[0],
+        'rating': (row_rating.transpose()*2).tolist()[0]    # map (0.5, 1, ..., 5) to (1, 2, ..., 10)
+    }
+    df = pd.DataFrame(ratings_dict)
+    reader = Reader(rating_scale=(1, 10))
+    data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
+
+    meanRMSE, meanMAE = [], []
+    for k in range(2, 102, 2):
+        knnWithMeans = KNNWithMeans(k, sim_options=sim_options)
+        out = cross_validate(knnWithMeans, data, measures=['RMSE', 'MAE'], cv=10)
+        meanRMSE.append(np.mean(out['test_rmse']))
+        meanMAE.append(np.mean(out['test_mae']))
+    return meanRMSE, meanMAE
+
+if __name__ == '__main__':
+    meanRMSE, meanMAE = Q10()
