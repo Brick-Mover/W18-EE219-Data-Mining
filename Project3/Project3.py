@@ -107,5 +107,7 @@ def Q10():
         meanMAE.append(np.mean(out['test_mae']))
     return meanRMSE, meanMAE
 
+
 if __name__ == '__main__':
     meanRMSE, meanMAE = Q10()
+
