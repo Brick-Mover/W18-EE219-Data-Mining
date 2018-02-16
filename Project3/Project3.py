@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-import csv
+import time, datetime
 import matplotlib.pyplot as plt
 from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.model_selection import cross_validate
-from surprise import Dataset,Reader
+from surprise import Dataset, Reader
 
 
 #
@@ -85,6 +85,21 @@ print(sparsity)
 # plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
 # plt.show()
 
+def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
+    for y, label in ys:
+        plt.plot(x, y, label=label)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if xticks is not None:
+        plt.xticks(x)
+    plt.legend()
+    if grid == True:
+        plt.grid()
+    if title is not None:
+        plt.title(title)
+    plt.show()
+
+
 def Q10():
     sim_options = {'name': 'pearson_baseline',
                    'shrinkage': 0  # no shrinkage
@@ -100,13 +115,19 @@ def Q10():
     data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
 
     meanRMSE, meanMAE = [], []
+    start = time.time()
     for k in range(2, 102, 2):
         knnWithMeans = KNNWithMeans(k, sim_options=sim_options)
         out = cross_validate(knnWithMeans, data, measures=['RMSE', 'MAE'], cv=10)
         meanRMSE.append(np.mean(out['test_rmse']))
         meanMAE.append(np.mean(out['test_mae']))
-    return meanRMSE, meanMAE
+    cv_time = str(datetime.timedelta(seconds=int(time.time() - start)))
+    print("Total time used for cross validation: " + cv_time)
 
+    k = list(range(2, 102, 2))
+    ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
+    make_plot(k, ys, 'Number of Neighbors', 'Error')
+    return meanRMSE, meanMAE
 
 if __name__ == '__main__':
     meanRMSE, meanMAE = Q10()
