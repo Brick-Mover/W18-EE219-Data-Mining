@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
-
+from surprise import NMF
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -128,6 +128,23 @@ def Q10():
     ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
     make_plot(k, ys, 'Number of Neighbors', 'Error')
     return meanRMSE, meanMAE
+
+
+def Q17():
+    #data?
+    data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
+    average_RMSE = []
+    average_MAE = []
+    for k in range(2,52,2):
+      algo = NMF(n_factors = k)
+      out = cross_validate(knnWithMeans, data, measures=['RMSE', 'MAE'], cv=10)
+      average_RMSE.append(np.mean(out['test_rmse']))
+      average_MAE.append(np.mean(out['test_mae']))
+
+    k = list(range(2,52,2))
+    make_plot(k, average_RMSE, 'average RMSE', 'number of latent factors')
+#    make_plot(k, average_MAE, 'average MAE', 'number of latent factors')
+    return
 
 if __name__ == '__main__':
     meanRMSE, meanMAE = Q10()
