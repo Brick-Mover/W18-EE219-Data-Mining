@@ -56,7 +56,7 @@ def saveDfToPickle():
     ratings_dict = {
         'movieID': mapped_row_movieId.transpose().tolist()[0],
         'userID': row_userId.transpose().tolist()[0],
-        'rating': (row_rating.transpose()*2).tolist()[0]    # map (0.5, 1, ..., 5) to (1, 2, ..., 10)
+        'rating': row_rating.transpose().tolist()[0]    # map (0.5, 1, ..., 5) to (1, 2, ..., 10)
     }
     df = pd.DataFrame(ratings_dict)
     df.to_pickle('df.pkl')
@@ -135,7 +135,7 @@ def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
 
 def load_data():
     df = pd.read_pickle('df.pkl')
-    reader = Reader(rating_scale=(1, 10))
+    reader = Reader(rating_scale=(0.5, 5))
     data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
     return data
 
@@ -250,7 +250,8 @@ def Q12To14And19To21And26To28(qNum, maxk=None):
     # plotting
     k = list(range(2, maxk+1, 2))
     ys = [[RMSE, 'RMSE']]
-    make_plot(k, ys, 'Number of Neighbors', 'Error')
+    xTitle = 'Number of Neighbors' if qNum <= 14 else 'Number of latent factors'
+    make_plot(k, ys, xTitle, 'Error')
     return RMSE
 
 
@@ -350,9 +351,15 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    #pop, unpop, highVar = classifyMovies()
-    RMSE = Q12To14And19To21And26To28(12, 10)
 
-
+    # RMSE12 = Q12To14And19To21And26To28(12)
+    # RMSE13 = Q12To14And19To21And26To28(13)
+    # RMSE14 = Q12To14And19To21And26To28(14)
+    # RMSE19 = Q12To14And19To21And26To28(19, 30)
+    # RMSE20 = Q12To14And19To21And26To28(20)
+    # RMSE21 = Q12To14And19To21And26To28(21)
+    RMSE26 = Q12To14And19To21And26To28(26, 20)
+    # RMSE27 = Q12To14And19To21And26To28(27)
+    # RMSE28 = Q12To14And19To21And26To28(28)
 
 
