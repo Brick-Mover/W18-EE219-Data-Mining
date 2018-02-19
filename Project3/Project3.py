@@ -161,44 +161,35 @@ def Q10():
     make_plot(k, ys, 'Number of Neighbors', 'Error')
     return meanRMSE, meanMAE
 
-def popularTrim(testSet):
-    colCnt = {}
-    for (_, c, _) in testSet:
-        if c in colCnt.keys():
-            colCnt[c] += 1
-        else:
-            colCnt[c] = 1
-    result = []
-    for (r, c, rating) in testSet:
-        if colCnt[c] > 2:
-            result.append((r, c, rating))
-    return result
+def popularTrim(testSet, pop):
+    return list(filter(lambda x: x[1] in pop, testSet))
 
-def unpopularTrim(testSet):
-    colCnt = {}
-    for (_, c, _) in testSet:
-        if c in colCnt.keys():
-            colCnt[c] += 1
-        else:
-            colCnt[c] = 1
-    result = []
-    for (r, c, rating) in testSet:
-        if colCnt[c] <= 2:
-            result.append((r, c, rating))
-    return result
+def unpopularTrim(testSet, unpop):
+    return list(filter(lambda x: x[1] in unpop, testSet))
 
-def highVarTrim(testSet):
+def highVarTrim(testSet, highVar):
+    return list(filter(lambda x: x[1] in highVar, testSet))
+
+"""
+Return 3 sets: popular, unpopular and highVar
+"""
+def classifyMovies():
+    df = pd.read_pickle('df.pkl')
+    pop, unpop, highVar = set(), set(), set()
     colCnt = {}
-    for (_, c, rating) in testSet:
-        if c in colCnt.keys():
-            colCnt[c].append(rating)
+    for m in df.itertuples():
+        if m.movieID in colCnt.keys():
+            colCnt[m.movieID].append(m.rating)
         else:
-            colCnt[c] = []
-    result = []
-    for (r, c, rating) in testSet:
-        if len(colCnt[c]) > 5 and np.var(np.array(colCnt[c])) > 2.0:
-            result.append((r, c, rating))
-    return result
+            colCnt[m.movieID] = []
+    for m in df.itertuples():
+        if len(colCnt[m.movieID]) <= 2:
+            unpop.add(m.movieID)
+        if len(colCnt[m.movieID]) > 2:
+            pop.add(m.movieID)
+        if len(colCnt[m.movieID]) > 5 and np.var(colCnt[m.movieID]) > 2.0:
+            highVar.add(m.movieID)
+    return pop, unpop, highVar
 
 def Q12To14And19To21And26To28(qNum, maxk=None):
     data = load_data()
@@ -210,26 +201,29 @@ def Q12To14And19To21And26To28(qNum, maxk=None):
             maxk = 50
         elif 26 <= qNum <= 28:
             maxk = 50
+
+    pop, unpop, highVar = classifyMovies()
+
     sim_options = {
         'name': 'pearson_baseline',
         'shrinkage': 0  # no shrinkage
     }
-    filterAndModel = {
-        12: (popularTrim, 'KNNWithMeans'),
-        13: (unpopularTrim, 'KNNWithMeans'),
-        14: (highVarTrim, 'KNNWithMeans'),
-        19: (popularTrim, 'NMF'),
-        20: (unpopularTrim, 'NMF'),
-        21: (highVarTrim, 'NMF'),
-        26: (popularTrim, 'SVD'),
-        27: (unpopularTrim, 'SVD'),
-        28: (highVarTrim, 'SVD')
+    trimAndModel = {
+        12: (pop, 'KNNWithMeans'),
+        13: (unpop, 'KNNWithMeans'),
+        14: (highVar, 'KNNWithMeans'),
+        19: (pop, 'NMF'),
+        20: (unpop, 'NMF'),
+        21: (highVar, 'NMF'),
+        26: (pop, 'SVD'),
+        27: (unpop, 'SVD'),
+        28: (highVar, 'SVD')
     }
 
     RMSE = []   #  RMSE for each k
     for k in range(2, maxk + 1, 2): # inclusive
         print('-' * 20 + ' k = ' + str(k) + ' ' + '-' * 20)
-        trimFun, modelName = filterAndModel[qNum]
+        trimSet, modelName = trimAndModel[qNum]
         if modelName == 'KNNWithMeans':
             model = KNNWithMeans(k, sim_options=sim_options)
         elif modelName == 'NMF':
@@ -241,7 +235,7 @@ def Q12To14And19To21And26To28(qNum, maxk=None):
         for trainSet, testSet in kf.split(data):
             subsubRMSE = 0
             model.fit(trainSet)
-            testSet = trimFun(testSet)
+            testSet = list(filter(lambda x: x[1] in trimSet, testSet))
             nTest = len(testSet)
             print("Split " + str(iter) + ": test set size after trimming: %d", nTest)
             iter += 1
@@ -355,7 +349,8 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    RMSE = Q12To14And19To21And26To28(21)
+    #pop, unpop, highVar = classifyMovies()
+    RMSE = Q12To14And19To21And26To28(12, 10)
 
 
 
