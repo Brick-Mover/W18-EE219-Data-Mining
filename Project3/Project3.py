@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import time, datetime
+import pickle
 import matplotlib.pyplot as plt
 from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.prediction_algorithms.matrix_factorization import SVD
@@ -26,34 +27,40 @@ from surprise.prediction_algorithms.matrix_factorization import NMF
 # !!!!!!!!!!!!!!!!!!!!!!!!!
 #
 
-#
-# Create R matrix
-#
-data = np.loadtxt('ml-latest-small/ratings.csv',
-                  delimiter=',', skiprows=1, usecols=(0,1,2))
 
-# tranform data type (from float to int for first 2 rows)
-# 'userId', 'movieId', 'rating'
-row_userId = data[:,:1].astype(int)
-row_movieId = data[:,1:2].astype(int)
-row_rating = data[:,2:3]
+"""
+This function should not be called during multi-threading!!
+"""
+def saveDfToPickle():
+    data = np.loadtxt('ml-latest-small/ratings.csv',
+                      delimiter=',', skiprows=1, usecols=(0, 1, 2))
 
+    # tranform data type (from float to int for first 2 rows)
+    # 'userId', 'movieId', 'rating'
+    row_userId = data[:, :1].astype(int)
+    row_movieId = data[:, 1:2].astype(int)
+    row_rating = data[:, 2:3]
+    # map movie ids to remove nonexistent movieId
+    sortedId = np.sort(row_movieId.transpose()[0])
+    m = {}
+    idx = 0
+    last = None
+    for i in sortedId.tolist():
+        if i != last:
+            m[i] = idx
+            idx += 1
+        last = i
+    mapped_row_movieId = np.copy(row_movieId)
+    for r in mapped_row_movieId:
+        r[0] = m[r[0]]
 
-
-# map movie ids to remove nonexistent movieId
-sortedId = np.sort(row_movieId.transpose()[0])
-m = {}
-idx = 0
-last = None
-for i in sortedId.tolist():
-    if i != last:
-        m[i] = idx
-        idx += 1
-    last = i
-mapped_row_movieId = np.copy(row_movieId)
-for r in mapped_row_movieId:
-    r[0] = m[r[0]]
-
+    ratings_dict = {
+        'movieID': mapped_row_movieId.transpose().tolist()[0],
+        'userID': row_userId.transpose().tolist()[0],
+        'rating': (row_rating.transpose()*2).tolist()[0]    # map (0.5, 1, ..., 5) to (1, 2, ..., 10)
+    }
+    df = pd.DataFrame(ratings_dict)
+    df.to_pickle('df.pkl')
 
 #
 # Question 1
@@ -73,6 +80,14 @@ for r in mapped_row_movieId:
 # columns to 9000+ columns.
 
 def Q1():
+    data = np.loadtxt('ml-latest-small/ratings.csv',
+                      delimiter=',', skiprows=1, usecols=(0, 1, 2))
+
+    # tranform data type (from float to int for first 2 rows)
+    # 'userId', 'movieId', 'rating'
+    row_userId = data[:, :1].astype(int)
+    row_movieId = data[:, 1:2].astype(int)
+    row_rating = data[:, 2:3]
     R_row = np.amax(row_userId)
     R_col = np.amax(row_movieId)
     print('Matrix has row size (users) %s, and col size (movies) %s'
@@ -120,12 +135,7 @@ def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
     plt.show()
 
 def load_data():
-    ratings_dict = {
-        'movieID': mapped_row_movieId.transpose().tolist()[0],
-        'userID': row_userId.transpose().tolist()[0],
-        'rating': (row_rating.transpose()*2).tolist()[0]    # map (0.5, 1, ..., 5) to (1, 2, ..., 10)
-    }
-    df = pd.DataFrame(ratings_dict)
+    df = pd.read_pickle('df.pkl')
     reader = Reader(rating_scale=(1, 10))
     data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
     return data
@@ -190,7 +200,6 @@ def highVarTrim(testSet):
         if len(colCnt[c]) > 5 and np.var(np.array(colCnt[c])) > 2:
             result.append((r, c, rating))
     return result
-
 
 def Q12To14(qNum, n_splits=10):
     data = load_data()
@@ -261,6 +270,10 @@ def Q19to21(qNum):
             predictions = nmf.test(testSet)
             for p in predictions:
                 subsubRMSE += pow(p.est - p.r_ui, 2)
+        # average of all train-test splits of k-NN
+        RMSE.append(np.mean(subRMSE))
+    return RMSE
+
 
 def Q24():
 
@@ -313,7 +326,7 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    Q17()
+    a, b = Q17()
 
 
 
