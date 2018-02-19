@@ -3,6 +3,7 @@ import pandas as pd
 import time, datetime
 import matplotlib.pyplot as plt
 from surprise.prediction_algorithms.knns import KNNWithMeans
+from surprise.prediction_algorithms.matrix_factorization import SVD
 from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
 from surprise.model_selection import KFold
@@ -239,6 +240,7 @@ def Q17():
     make_plot(k, ys, 'Number of Neighbors', 'Error')
     return meanRMSE, meanMAE
 
+
 def Q19to21(qNum):
     data = load_data()
     kf = KFold(n_splits=10)
@@ -259,11 +261,60 @@ def Q19to21(qNum):
             predictions = nmf.test(testSet)
             for p in predictions:
                 subsubRMSE += pow(p.est - p.r_ui, 2)
+
+def Q24():
+
+# so far using same code as Q10, Q12-14 for Q24, Q26-28, can combine code later
+# only using SVD for Q24 for now, but the RMSE and MAE don't change much with latent factor
+    data = load_data()
+
+    meanRMSE, meanMAE = [], []
+    start = time.time()
+    for k in range(2, 52, 2):
+        MF_svd = SVD(n_factors = k)
+        out = cross_validate(MF_svd, data, measures=['RMSE', 'MAE'], cv=10)
+        meanRMSE.append(np.mean(out['test_rmse']))
+        meanMAE.append(np.mean(out['test_mae']))
+    cv_time = str(datetime.timedelta(seconds=int(time.time() - start)))
+    print("Total time used for cross validation: " + cv_time)
+
+    k = list(range(2, 52, 2))
+    ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
+    #currently plot meanRMSE and meanMAE separately because it's hard to see the trend when they are plotted in same graph 
+    make_plot(k, [[meanRMSE, 'mean RMSE']], 'Number of Neighbors', 'Error')
+    make_plot(k, [[meanMAE, 'mean MAE']], 'Number of Neighbors', 'Error')
+    return meanRMSE, meanMAE
+
+def Q26To28(qNum, n_splits=10):
+    data = load_data()
+    kf = KFold(n_splits=10)
+
+    trimFun = {26: popularTrim,
+               27: unpopularTrim,
+               28: highVarTrim}
+    RMSE = []
+    for k in range(2, 52, 2):
+        MF_svd = SVD(n_factors = k)
+        subRMSE = []
+        for trainSet, testSet in kf.split(data):
+            subsubRMSE = 0
+            MF_svd.fit(trainSet)
+            testSet = trimFun[qNum](testSet)
+            nTest = len(testSet)
+            print("test set size after trimming: %d", nTest)
+            for (r, c, rating) in testSet:
+                predictedRating = MF_svd.predict(str(r), str(c))
+                subsubRMSE += (pow(rating - predictedRating.est, 2))
             # calculate RMSE of this train-test split
             subRMSE.append(np.sqrt(subsubRMSE / nTest))
         # average of all train-test splits of k-NN
         RMSE.append(np.mean(subRMSE))
+
     return RMSE
 
 if __name__ == '__main__':
     Q17()
+
+
+
+
