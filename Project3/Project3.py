@@ -7,7 +7,7 @@ from surprise.prediction_algorithms.matrix_factorization import SVD, NMF
 from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
 from surprise.model_selection import KFold
-
+import math
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -78,7 +78,7 @@ def saveDfToPickle():
 # a way to map 9000+ movies (with movieIDs max to 163949) from 163949
 # columns to 9000+ columns.
 
-def Q1():
+def Q1to6():
     data = np.loadtxt('ml-latest-small/ratings.csv',
                       delimiter=',', skiprows=1, usecols=(0, 1, 2))
 
@@ -87,37 +87,85 @@ def Q1():
     row_userId = data[:, :1].astype(int)
     row_movieId = data[:, 1:2].astype(int)
     row_rating = data[:, 2:3]
+    # map movie ids to remove nonexistent movieId
+    sortedId = np.sort(row_movieId.transpose()[0])
+    m = {}
+    idx = 0
+    last = None
+    for i in sortedId.tolist():
+        if i != last:
+            m[i] = idx
+            idx += 1
+        last = i
+    mapped_row_movieId = np.copy(row_movieId)
+    for r in mapped_row_movieId:
+        r[0] = m[r[0]]
+
     R_row = np.amax(row_userId)
-    R_col = np.amax(row_movieId)
+    R_col = np.amax(mapped_row_movieId)
     print('Matrix has row size (users) %s, and col size (movies) %s'
           % (R_row, R_col))
     R = np.zeros([R_row, R_col])
     for i in range(row_userId.size):
         r = row_userId[i] - 1
-        c = row_movieId[i] - 1
+        c = mapped_row_movieId[i] - 1
         rating = row_rating[i]
         R[r, c] = rating
 
-    assert(R[1,109]==4.0)
     rating_avl = np.count_nonzero(R)
     rating_psb = np.prod(R.shape)
     sparsity = rating_avl/rating_psb
     print(sparsity)
 
-# Question 2
+    # Question 2
+    # plot a historgram showing frequency of rating values
+    ratings_arr = []
+    for r in range(R_row):
+    	for c in range(R_col):
+    		if R[r,c]!=0.0:
+    			ratings_arr.append(R[r,c])
+    binwidth = 0.5
+    print (min(ratings_arr))
+    print (max(ratings_arr))
 
-# plot a historgram showing frequency of rating values
-# ratings_arr = []
-# for r in range(R_row):
-#     for c in range(R_col):
-#         if R[r,c]!=0.0:
-#             ratings_arr.append(R[r,c])
-# binwidth = 0.5
-# print (min(ratings_arr))
-# print (max(ratings_arr))
-#
-# plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
-# plt.show()
+    plt.hist(ratings_arr, bins=np.arange(min(ratings_arr), max(ratings_arr) + binwidth, binwidth))
+    plt.show()
+    plt.close()
+
+    # Question 3
+    l = [0 for x in range(0, R_col)] #R_row
+
+    for r in range(R_row):
+    	for c in range(R_col): 
+    		if R[r,c]!=0.0:
+    			l[c] = l[c] + 1
+    l_no_zero = [val for val in l if val!=0]
+    l_no_zero.sort(reverse = True)
+
+    plt.plot([i+1 for i in range(0, len(l_no_zero))], l_no_zero)
+    plt.show()
+    plt.close()
+
+    # Question 4
+    l = np.zeros(R_row)
+    for r in row_userId:
+    	l[r[0]-1] += 1
+    l[::-1].sort()
+    plt.plot([i for i in range(1, len(l)+1)], l)
+    plt.show()
+    plt.close()
+
+    # Q6
+    var = np.array([])
+    for c in range(R_col):
+    	var = np.append(var, np.var(R[:,c]))
+    var_bin = np.zeros(math.ceil((np.amax(var)-np.amin(var))/0.5))
+    for v in var:
+    	var_bin[math.floor(v/0.5)] += 1
+    plt.hist(var, bins=np.arange(min(var),max(var),0.5))
+    plt.show()
+    plt.close()
+
 
 def make_plot(x, ys, xlabel, ylabel, xticks=None, grid=False, title=None):
     for y, label in ys:
