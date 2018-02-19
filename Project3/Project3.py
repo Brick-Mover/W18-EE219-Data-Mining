@@ -181,7 +181,7 @@ def classifyMovies():
         if m.movieID in colCnt.keys():
             colCnt[m.movieID].append(m.rating)
         else:
-            colCnt[m.movieID] = []
+            colCnt[m.movieID] = [m.rating]
     for m in df.itertuples():
         if len(colCnt[m.movieID]) <= 2:
             unpop.add(m.movieID)
