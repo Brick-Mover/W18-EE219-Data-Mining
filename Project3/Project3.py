@@ -1,14 +1,13 @@
 import numpy as np
 import pandas as pd
 import time, datetime
-import pickle
 import matplotlib.pyplot as plt
 from surprise.prediction_algorithms.knns import KNNWithMeans
-from surprise.prediction_algorithms.matrix_factorization import SVD
+from surprise.prediction_algorithms.matrix_factorization import SVD, NMF
 from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
 from surprise.model_selection import KFold
-from surprise.prediction_algorithms.matrix_factorization import NMF
+
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -201,32 +200,52 @@ def highVarTrim(testSet):
             result.append((r, c, rating))
     return result
 
-def Q12To14(qNum, n_splits=10):
+def Q12To14And19To21And26To28(qNum):
     data = load_data()
     kf = KFold(n_splits=10)
-
+    if 12 <= qNum <= 14:
+        maxk = 100
+    elif 19 <= qNum <= 21:
+        maxk = 50
+    else:
+        maxk = 50
     sim_options = {'name': 'pearson_baseline',
                    'shrinkage': 0  # no shrinkage
                  }
-    trimFun = {12: popularTrim,
-               13: unpopularTrim,
-               14: highVarTrim}
-    RMSE = []
-    for k in range(2, 20, 2):
-        knnWithMeans = KNNWithMeans(k, sim_options=sim_options)
-        subRMSE = []
+    filterAndModel = {
+        12: (popularTrim, 'KNNWithMeans'),
+        13: (unpopularTrim, 'KNNWithMeans'),
+        14: (highVarTrim, 'KNNWithMeans'),
+        19: (popularTrim, 'NMF'),
+        20: (unpopularTrim, 'NMF'),
+        21: (highVarTrim, 'NMF'),
+        26: (popularTrim, 'SVD'),
+        27: (unpopularTrim, 'SVD'),
+        28: (highVarTrim, 'SVD')
+    }
+
+    RMSE = []   #  RMSE for each k
+    for k in range(2, maxk + 1, 2): # inclusive
+        trimFun, modelName = filterAndModel[qNum]
+        if modelName == 'KNNWithMeans':
+            model = KNNWithMeans(k, sim_options=sim_options)
+        elif modelName == 'NMF':
+            model = NMF()
+        else:
+            model = SVD(n_factors = k)
+        subRMSE = []    # RMSE for each k for each train-test split
         for trainSet, testSet in kf.split(data):
             subsubRMSE = 0
-            knnWithMeans.fit(trainSet)
-            testSet = trimFun[qNum](testSet)
+            model.fit(trainSet)
+            testSet = trimFun(testSet)
             nTest = len(testSet)
             print("test set size after trimming: %d", nTest)
-            predictions = knnWithMeans.test(testSet)
+            predictions = model.test(testSet)
             for p in predictions:
                 subsubRMSE += pow(p.est - p.r_ui, 2)
             # calculate RMSE of this train-test split
             subRMSE.append(np.sqrt(subsubRMSE / nTest))
-        # average of all train-test splits of k-NN
+        # average of all train-test splits of k-NN for this k
         RMSE.append(np.mean(subRMSE))
     return RMSE
 
@@ -326,7 +345,7 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    a, b = Q17()
+    a, b = Q12To14And19To21And26To28(21)
 
 
 
