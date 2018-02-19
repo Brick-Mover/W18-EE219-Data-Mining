@@ -6,8 +6,7 @@ from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
 from surprise.model_selection import KFold
-
-from surprise import NMF
+from surprise.prediction_algorithms.matrix_factorization import NMF
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -37,18 +36,7 @@ data = np.loadtxt('ml-latest-small/ratings.csv',
 row_userId = data[:,:1].astype(int)
 row_movieId = data[:,1:2].astype(int)
 row_rating = data[:,2:3]
-R_row = np.amax(row_userId)
-R_col = np.amax(row_movieId)
-print('Matrix has row size (users) %s, and col size (movies) %s'
-      % (R_row, R_col))
-R = np.zeros([R_row, R_col])
-for i in range(row_userId.size):
-    r = row_userId[i] - 1
-    c = row_movieId[i] - 1
-    rating = row_rating[i]
-    R[r, c] = rating
 
-assert(R[1,109]==4.0)
 
 
 # map movie ids to remove nonexistent movieId
@@ -83,10 +71,23 @@ for r in mapped_row_movieId:
 # a way to map 9000+ movies (with movieIDs max to 163949) from 163949
 # columns to 9000+ columns.
 
-rating_avl = np.count_nonzero(R)
-rating_psb = np.prod(R.shape)
-sparsity = rating_avl/rating_psb
-print(sparsity)
+def Q1():
+    R_row = np.amax(row_userId)
+    R_col = np.amax(row_movieId)
+    print('Matrix has row size (users) %s, and col size (movies) %s'
+          % (R_row, R_col))
+    R = np.zeros([R_row, R_col])
+    for i in range(row_userId.size):
+        r = row_userId[i] - 1
+        c = row_movieId[i] - 1
+        rating = row_rating[i]
+        R[r, c] = rating
+
+    assert(R[1,109]==4.0)
+    rating_avl = np.count_nonzero(R)
+    rating_psb = np.prod(R.shape)
+    sparsity = rating_avl/rating_psb
+    print(sparsity)
 
 # Question 2
 
@@ -201,7 +202,7 @@ def Q12To14(qNum, n_splits=10):
                13: unpopularTrim,
                14: highVarTrim}
     RMSE = []
-    for k in range(2, 10, 2):
+    for k in range(2, 20, 2):
         knnWithMeans = KNNWithMeans(k, sim_options=sim_options)
         subRMSE = []
         for trainSet, testSet in kf.split(data):
@@ -210,9 +211,9 @@ def Q12To14(qNum, n_splits=10):
             testSet = trimFun[qNum](testSet)
             nTest = len(testSet)
             print("test set size after trimming: %d", nTest)
-            for (r, c, rating) in testSet:
-                predictedRating = knnWithMeans.predict(str(r), str(c))
-                subsubRMSE += (pow(rating - predictedRating.est, 2))
+            predictions = knnWithMeans.test(testSet)
+            for p in predictions:
+                subsubRMSE += pow(p.est - p.r_ui, 2)
             # calculate RMSE of this train-test split
             subRMSE.append(np.sqrt(subsubRMSE / nTest))
         # average of all train-test splits of k-NN
@@ -221,23 +222,48 @@ def Q12To14(qNum, n_splits=10):
 
 
 def Q17():
-    #data?
-    data = Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
-    average_RMSE = []
-    average_MAE = []
-    for k in range(2,52,2):
-      algo = NMF(n_factors = k)
-      out = cross_validate(knnWithMeans, data, measures=['RMSE', 'MAE'], cv=10)
-      average_RMSE.append(np.mean(out['test_rmse']))
-      average_MAE.append(np.mean(out['test_mae']))
+    data = load_data()
 
-    k = list(range(2,52,2))
-    make_plot(k, average_RMSE, 'average RMSE', 'number of latent factors')
-#    make_plot(k, average_MAE, 'average MAE', 'number of latent factors')
-    return
+    meanRMSE, meanMAE = [], []
+    start = time.time()
+    for k in range(2, 102, 2):
+        nmf = NMF()
+        out = cross_validate(nmf, data, measures=['RMSE', 'MAE'], cv=10)
+        meanRMSE.append(np.mean(out['test_rmse']))
+        meanMAE.append(np.mean(out['test_mae']))
+    cv_time = str(datetime.timedelta(seconds=int(time.time() - start)))
+    print("Total time used for cross validation: " + cv_time)
 
+    k = list(range(2, 52, 2))
+    ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
+    make_plot(k, ys, 'Number of Neighbors', 'Error')
+    return meanRMSE, meanMAE
+
+def Q19to21(qNum):
+    data = load_data()
+    kf = KFold(n_splits=10)
+
+    trimFun = {12: popularTrim,
+               13: unpopularTrim,
+               14: highVarTrim}
+    RMSE = []
+    for k in range(2, 20, 2):
+        nmf = NMF()
+        subRMSE = []
+        for trainSet, testSet in kf.split(data):
+            subsubRMSE = 0
+            nmf.fit(trainSet)
+            testSet = trimFun[qNum](testSet)
+            nTest = len(testSet)
+            print("test set size after trimming: %d", nTest)
+            predictions = nmf.test(testSet)
+            for p in predictions:
+                subsubRMSE += pow(p.est - p.r_ui, 2)
+            # calculate RMSE of this train-test split
+            subRMSE.append(np.sqrt(subsubRMSE / nTest))
+        # average of all train-test splits of k-NN
+        RMSE.append(np.mean(subRMSE))
+    return RMSE
 
 if __name__ == '__main__':
-    RMSE12 = Q12To14(12)
-    # Q12To14(13)
-    # Q12To14(14)
+    Q17()
