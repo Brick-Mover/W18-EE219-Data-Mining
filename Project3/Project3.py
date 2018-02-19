@@ -265,7 +265,8 @@ def Q17():
 
     meanRMSE, meanMAE = [], []
     start = time.time()
-    for k in range(2, 102, 2):
+    for k in range(2, 52, 2):
+        print(k)
         nmf = NMF()
         out = cross_validate(nmf, data, measures=['RMSE', 'MAE'], cv=10)
         meanRMSE.append(np.mean(out['test_rmse']))
@@ -355,7 +356,7 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    RMSE = Q12To14And19To21And26To28(21)
+    a,b = Q17()
 
 
 
