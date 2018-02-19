@@ -196,22 +196,24 @@ def highVarTrim(testSet):
             colCnt[c] = []
     result = []
     for (r, c, rating) in testSet:
-        if len(colCnt[c]) > 5 and np.var(np.array(colCnt[c])) > 2:
+        if len(colCnt[c]) > 5 and np.var(np.array(colCnt[c])) > 2.0:
             result.append((r, c, rating))
     return result
 
-def Q12To14And19To21And26To28(qNum):
+def Q12To14And19To21And26To28(qNum, maxk=None):
     data = load_data()
     kf = KFold(n_splits=10)
-    if 12 <= qNum <= 14:
-        maxk = 100
-    elif 19 <= qNum <= 21:
-        maxk = 50
-    else:
-        maxk = 50
-    sim_options = {'name': 'pearson_baseline',
-                   'shrinkage': 0  # no shrinkage
-                 }
+    if maxk is None:
+        if 12 <= qNum <= 14:
+            maxk = 100
+        elif 19 <= qNum <= 21:
+            maxk = 50
+        elif 26 <= qNum <= 28:
+            maxk = 50
+    sim_options = {
+        'name': 'pearson_baseline',
+        'shrinkage': 0  # no shrinkage
+    }
     filterAndModel = {
         12: (popularTrim, 'KNNWithMeans'),
         13: (unpopularTrim, 'KNNWithMeans'),
@@ -226,6 +228,7 @@ def Q12To14And19To21And26To28(qNum):
 
     RMSE = []   #  RMSE for each k
     for k in range(2, maxk + 1, 2): # inclusive
+        print('-' * 20 + ' k = ' + str(k) + ' ' + '-' * 20)
         trimFun, modelName = filterAndModel[qNum]
         if modelName == 'KNNWithMeans':
             model = KNNWithMeans(k, sim_options=sim_options)
@@ -234,12 +237,14 @@ def Q12To14And19To21And26To28(qNum):
         else:
             model = SVD(n_factors = k)
         subRMSE = []    # RMSE for each k for each train-test split
+        iter = 1
         for trainSet, testSet in kf.split(data):
             subsubRMSE = 0
             model.fit(trainSet)
             testSet = trimFun(testSet)
             nTest = len(testSet)
-            print("test set size after trimming: %d", nTest)
+            print("Split " + str(iter) + ": test set size after trimming: %d", nTest)
+            iter += 1
             predictions = model.test(testSet)
             for p in predictions:
                 subsubRMSE += pow(p.est - p.r_ui, 2)
@@ -247,6 +252,11 @@ def Q12To14And19To21And26To28(qNum):
             subRMSE.append(np.sqrt(subsubRMSE / nTest))
         # average of all train-test splits of k-NN for this k
         RMSE.append(np.mean(subRMSE))
+
+    # plotting
+    k = list(range(2, maxk+1, 2))
+    ys = [[RMSE, 'RMSE']]
+    make_plot(k, ys, 'Number of Neighbors', 'Error')
     return RMSE
 
 
@@ -345,7 +355,7 @@ def Q26To28(qNum, n_splits=10):
     return RMSE
 
 if __name__ == '__main__':
-    a, b = Q12To14And19To21And26To28(21)
+    RMSE = Q12To14And19To21And26To28(21)
 
 
 
