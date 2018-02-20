@@ -124,9 +124,9 @@ def Q1to6():
     # plot a historgram showing frequency of rating values
     ratings_arr = []
     for r in range(R_row):
-    	for c in range(R_col):
-    		if R[r,c]!=0.0:
-    			ratings_arr.append(R[r,c])
+        for c in range(R_col):
+            if R[r,c]!=0.0:
+                ratings_arr.append(R[r,c])
     binwidth = 0.5
     print (min(ratings_arr))
     print (max(ratings_arr))
@@ -139,9 +139,9 @@ def Q1to6():
     l = [0 for x in range(0, R_col)] #R_row
 
     for r in range(R_row):
-    	for c in range(R_col): 
-    		if R[r,c]!=0.0:
-    			l[c] = l[c] + 1
+        for c in range(R_col): 
+            if R[r,c]!=0.0:
+                l[c] = l[c] + 1
     l_no_zero = [val for val in l if val!=0]
     l_no_zero.sort(reverse = True)
 
@@ -152,7 +152,7 @@ def Q1to6():
     # Question 4
     l = np.zeros(R_row)
     for r in row_userId:
-    	l[r[0]-1] += 1
+        l[r[0]-1] += 1
     l[::-1].sort()
     plt.plot([i for i in range(1, len(l)+1)], l)
     plt.show()
@@ -161,10 +161,10 @@ def Q1to6():
     # Q6
     var = np.array([])
     for c in range(R_col):
-    	var = np.append(var, np.var(R[:,c]))
+        var = np.append(var, np.var(R[:,c]))
     var_bin = np.zeros(math.ceil((np.amax(var)-np.amin(var))/0.5))
     for v in var:
-    	var_bin[math.floor(v/0.5)] += 1
+        var_bin[math.floor(v/0.5)] += 1
     plt.hist(var, bins=np.arange(min(var),max(var),0.5))
     plt.show()
     plt.close()
@@ -258,6 +258,55 @@ def Q15and22and29(qNum, bestK, thres=[2.5,3,3.5,4]):
             np_score = np.append(np_score, p/range)
         title = 'Threshold '+str(thrs)
         plot_ROC(np_true, np_score, title=title)
+
+def Q23(col=0):
+    print('Chosen column is '+str(col))
+    data = np.loadtxt('ml-latest-small/ratings.csv',
+                  delimiter=',', skiprows=1, usecols=(0,1,2))
+
+    row_userId = data[:,:1].astype(int)
+    row_movieId = data[:,1:2].astype(int)
+    row_rating = data[:,2:3]
+
+    sortedId = np.sort(row_movieId.transpose()[0])
+    m = {}
+    idx = 0
+    last = None
+    for i in sortedId.tolist():
+        if i != last:
+            m[i] = idx
+            idx += 1
+        last = i
+    
+    data = load_data()
+    model = NMF(n_factors = 20)
+    trainset, testset = train_test_split(data, test_size=0.0001)
+    model.fit(trainset)
+    U = model.pu
+    V = model.qi
+
+    import csv
+    dict_ID_to_genre = {}
+    with open('ml-latest-small/movies.csv', 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        cnt = 0
+        for row in reader:
+            if cnt != 0:
+                dict_ID_to_genre[row[0]] = row[1:]
+            cnt += 1
+
+    dict_col_to_ID = {}
+    for key in m:
+        dict_col_to_ID[m[key]] = key
+
+    V_col = V[:, col]
+    V_col_sort_top10 = np.sort(V_col)[::-1][:10]
+    V_col_list = V_col.tolist()
+    for val in V_col_sort_top10:
+        ind = V_col_list.index(val)
+        m_id = dict_col_to_ID[ind]
+        genre = dict_ID_to_genre[str(m_id)]
+        print(genre[-1])
 
 def popularTrim(testSet, pop):
     return list(filter(lambda x: x[1] in pop, testSet))
@@ -459,4 +508,5 @@ if __name__ == '__main__':
     # RMSE27 = Q12To14And19To21And26To28(27)
     # RMSE28 = Q12To14And19To21And26To28(28)
     # meanRMSE, meanMAE = Q17()
-    Q15and22and29(15, bestK=22)
+    # Q15and22and29(22, bestK=18)
+    Q23(col=0)
