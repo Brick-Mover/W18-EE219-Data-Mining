@@ -9,6 +9,8 @@ from surprise.model_selection import cross_validate
 from surprise import Dataset, Reader
 from surprise.model_selection import KFold
 import math
+from surprise.model_selection import train_test_split
+from sklearn.metrics import roc_curve, auc
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -210,6 +212,53 @@ def Q10():
     make_plot(k, ys, 'Number of Neighbors', 'Error')
     return meanRMSE, meanMAE
 
+def plot_ROC(yTrue, yScore, title='ROC Curve'):
+    fpr, tpr, thresholds = roc_curve(yTrue, yScore)
+    roc_auc = auc(fpr, tpr)
+    
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(title)
+    plt.legend(loc="lower right")
+    plt.show()
+    plt.close()
+
+def Q15and22and29(qNum, bestK, thres=[2.5,3,3.5,4]):
+    range = 5.0
+    sim_options = {
+        'name': 'pearson_baseline',
+        'shrinkage': 0  # no shrinkage
+    }
+    data = load_data()
+    trainset, testset = train_test_split(data, test_size=0.1)
+    if qNum == 15:
+        model = KNNWithMeans(bestK, sim_options=sim_options)
+    elif qNum == 22:
+        model = NMF(n_factors=bestK)
+    else:
+        model = SVD(n_factors=bestK)
+
+    model.fit(trainset)
+    pred = model.test(testset)
+    for thrs in thres:
+        np_true = np.array([])
+        np_score = np.array([])
+        for u, i, t, p, d in pred:
+            if t >= thrs:
+                t = 1
+            else:
+                t = 0
+            np_true = np.append(np_true, t)
+            np_score = np.append(np_score, p/range)
+        title = 'Threshold '+str(thrs)
+        plot_ROC(np_true, np_score, title=title)
+
 def popularTrim(testSet, pop):
     return list(filter(lambda x: x[1] in pop, testSet))
 
@@ -409,4 +458,5 @@ if __name__ == '__main__':
     # RMSE26 = Q12To14And19To21And26To28(26, 20)
     # RMSE27 = Q12To14And19To21And26To28(27)
     # RMSE28 = Q12To14And19To21And26To28(28)
-    meanRMSE, meanMAE = Q17()
+    # meanRMSE, meanMAE = Q17()
+    Q15and22and29(15, bestK=22)
