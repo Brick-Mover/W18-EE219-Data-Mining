@@ -310,7 +310,7 @@ def Q17():
     start = time.time()
     for k in range(2, 52, 2):
         print(k)
-        nmf = NMF()
+        nmf = NMF(n_factors = k)
         out = cross_validate(nmf, data, measures=['RMSE', 'MAE'], cv=10)
         meanRMSE.append(np.mean(out['test_rmse']))
         meanMAE.append(np.mean(out['test_mae']))
@@ -319,7 +319,7 @@ def Q17():
 
     k = list(range(2, 52, 2))
     ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
-    make_plot(k, ys, 'Number of Neighbors', 'Error')
+    make_plot(k, ys, 'Number of Latent factors', 'rating')
     return meanRMSE, meanMAE
 
 
@@ -406,8 +406,9 @@ if __name__ == '__main__':
     # RMSE19 = Q12To14And19To21And26To28(19, 30)
     # RMSE20 = Q12To14And19To21And26To28(20)
     # RMSE21 = Q12To14And19To21And26To28(21)
-    RMSE26 = Q12To14And19To21And26To28(26, 20)
+    # RMSE26 = Q12To14And19To21And26To28(26, 20)
     # RMSE27 = Q12To14And19To21And26To28(27)
     # RMSE28 = Q12To14And19To21And26To28(28)
+    Q17();
 
 
