@@ -275,7 +275,7 @@ def Q12To14And19To21And26To28(qNum, maxk=None):
         if modelName == 'KNNWithMeans':
             model = KNNWithMeans(k, sim_options=sim_options)
         elif modelName == 'NMF':
-            model = NMF()
+            model = NMF(n_factors=k)
         else:
             model = SVD(n_factors = k)
         subRMSE = []    # RMSE for each k for each train-test split
@@ -309,8 +309,7 @@ def Q17():
     meanRMSE, meanMAE = [], []
     start = time.time()
     for k in range(2, 52, 2):
-        print(k)
-        nmf = NMF()
+        nmf = NMF(n_factors=k)
         out = cross_validate(nmf, data, measures=['RMSE', 'MAE'], cv=10)
         meanRMSE.append(np.mean(out['test_rmse']))
         meanMAE.append(np.mean(out['test_mae']))
@@ -406,8 +405,9 @@ if __name__ == '__main__':
     # RMSE19 = Q12To14And19To21And26To28(19, 30)
     # RMSE20 = Q12To14And19To21And26To28(20)
     # RMSE21 = Q12To14And19To21And26To28(21)
-    RMSE26 = Q12To14And19To21And26To28(26, 20)
+    # RMSE26 = Q12To14And19To21And26To28(26, 20)
     # RMSE27 = Q12To14And19To21And26To28(27)
     # RMSE28 = Q12To14And19To21And26To28(28)
+    meanRMSE, meanMAE = Q17()
 
 
