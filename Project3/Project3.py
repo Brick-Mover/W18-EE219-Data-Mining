@@ -11,6 +11,7 @@ from surprise.model_selection import KFold
 import math
 from surprise.model_selection import train_test_split
 from sklearn.metrics import roc_curve, auc
+from collections import defaultdict
 
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -496,6 +497,89 @@ def Q26To28(qNum, n_splits=10):
 
     return RMSE
 
+# Note that this function, precision_recall, is referenced from: 
+# http://surprise.readthedocs.io/en/stable/FAQ.html 
+def precision_recall (predictions, t):
+    threshold = 3.5 
+    user_est_true = defaultdict(list)
+    for uid, _, true_r, est, _ in predictions:
+        user_est_true[uid].append((est, true_r))
+
+    precisions = dict()
+    recalls = dict()
+    for uid, user_ratings in user_est_true.items():
+
+        # Sort user ratings by estimated value
+        user_ratings.sort(key=lambda x: x[0], reverse=True)
+
+        # Number of relevant items
+        n_rel = sum((true_r >= threshold) for (_, true_r) in user_ratings)
+
+        # Number of recommended items in top t
+        n_rec_k = sum((est >= threshold) for (est, _) in user_ratings[:t])
+
+        # Number of relevant and recommended items in top t
+        n_rel_and_rec_k = sum(((true_r >= threshold) and (est >= threshold))
+                              for (est, true_r) in user_ratings[:t])
+
+        # Precision@t: Proportion of recommended items that are relevant
+        precisions[uid] = n_rel_and_rec_k / n_rec_k if n_rec_k != 0 else 1
+
+        # Recall@t: Proportion of relevant items that are recommended
+        recalls[uid] = n_rel_and_rec_k / n_rel if n_rel != 0 else 1
+
+    return precisions, recalls
+
+def Q36To38(qNum):
+    data = load_data()
+    kf = KFold(n_splits=10)
+    sim_options = {
+        'name': 'pearson_baseline',
+        'shrinkage': 0  # no shrinkage
+    }
+    filter = {
+        36: 'KNNWithMeans',
+        37: 'NMF',
+        38: 'SVD',
+    }
+    k_KNNWithMeans = 30 # from Q11
+    k_NMF = 18 # from Q18
+    k_SVD = 8 # from Q25 
+
+    modelName = filter[qNum]
+
+    if modelName == 'KNNWithMeans':
+        model = KNNWithMeans(k_KNNWithMeans, sim_options=sim_options)
+    elif modelName == 'NMF':
+        model = NMF(n_factors=k_NMF)
+    else:
+        model = SVD(n_factors = k_SVD)
+
+    # sweep t from 1 to 25
+    t = 1 
+    precision_arr = []
+    recall_arr = []
+    for t in range (1,26):
+        for trainSet, testSet in kf.split(data):
+            sub_precisions = 0.0
+            sub_recalls = 0.0
+            model.fit(trainSet)
+            predictions = model.test(testSet)
+            precisions, recalls = precision_recall (predictions, t)
+            print(sum(prec for prec in precisions.values()) / len(precisions))
+            sub_precisions += (sum(prec for prec in precisions.values()) / len(precisions))
+            print(sum(rec for rec in recalls.values()) / len(recalls))
+            sub_recalls += (sum(rec for rec in recalls.values()) / len(recalls))
+        precision_arr.append(np.mean(sub_precisions))
+        recall_arr.append(np.mean(sub_recalls))
+
+
+    t_list = list(range (1,26))
+    ys = [[precision_arr, 'mean precisions'], [recall_arr, 'mean recalls']]
+    make_plot(t_list, ys, 'recommended item size t','Precision/Recall')
+    return 
+
+
 if __name__ == '__main__':
 
     # RMSE12 = Q12To14And19To21And26To28(12)
@@ -509,4 +593,5 @@ if __name__ == '__main__':
     # RMSE28 = Q12To14And19To21And26To28(28)
     # meanRMSE, meanMAE = Q17()
     # Q15and22and29(22, bestK=18)
-    Q23(col=0)
+    #Q23(col=0)
+    Q36To38(36)
