@@ -566,6 +566,55 @@ def Q30to33(qNum):
         subRMSE = np.append(subRMSE, np.sqrt(subsubRMSE/nTest))
     RMSE = np.mean(subRMSE)
     print("Q"+str(qNum)+" has RMSE "+str(RMSE))
+
+def Q34():
+    rang = 5.0
+    sim_options = {
+        'name': 'pearson_baseline',
+        'shrinkage': 0  # no shrinkage
+    }
+    data = load_data()
+    trainset, testset = train_test_split(data, test_size=0.1)
+    knn = KNNWithMeans(22, sim_options=sim_options)
+    nmf = NMF(n_factors=18)
+    svd = SVD(n_factors=8)
+    fp = {}
+    tp = {}
+    area = np.array([])
+    for model, key in zip([knn, nmf, svd], ['KNN','NNMF','SVD']):
+        model.fit(trainset)
+        pred = model.test(testset)
+        np_true = np.array([])
+        np_score = np.array([])
+        for _, _, t, p, _ in pred:
+            if t >= 3:
+                t = 1
+            else:
+                t = 0
+            np_true = np.append(np_true, t)
+            np_score = np.append(np_score, p/rang)
+        fpr, tpr, thresholds = roc_curve(np_true, np_score)
+        print(fpr.shape, tpr.shape)
+        roc_auc = auc(fpr, tpr)
+        fp[key] = fpr
+        tp[key] = tpr
+        area = np.append(area, roc_auc)
+    plt.figure()
+    lw = 2
+    for mod, f, t, roc_auc in zip(['KNN','NNMF','SVD'], fp, tp, area):
+        fpr = fp[f]
+        tpr = tp[t]
+    #     label = mod+'ROC curve (area = '+str(roc_auc)+'0.2f)'
+        plt.plot(fpr, tpr, lw=lw, label='%s ROC curve (area = %0.2f)' % (mod,roc_auc))
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves')
+    plt.legend(loc="lower right")
+    plt.show()
+    plt.close()
 # 
 # ---------------------------------------------------------
 # End Q30-34
@@ -705,5 +754,6 @@ if __name__ == '__main__':
     # meanRMSE, meanMAE = Q17()
     # Q15and22and29(22, bestK=18)
     #Q23(col=0)
-    for q in [30,31,32,33]:
-        Q30to33(q)
+    # for q in [30,31,32,33]:
+    #     Q30to33(q)
+    Q34()
