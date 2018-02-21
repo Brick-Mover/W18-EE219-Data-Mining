@@ -21,7 +21,9 @@ datetime
 
 There's only one file called "project3.py" for this assignment. 
 
-To run this assignment, run "python3 project3.py" in the terminal. Note that our code is only designed for python3 environment 
+To run this assignment, run "python3 project3.py" in the terminal. Note that our code is only designed for python3 environment.
+
+Due to the similarity of the functions as well as time complexity is concerned, we combined questions into chunks. To evaluate a specific question, for example, question 6, you will have to call the function named Q1to6(6), where 6 stands for problem 6 and passed into the function as a parameter.
 
 Please refer to the spec and report for the description of each part. 
 For parts that have more than one graph, please close the graph when you want the remaining code to run and other graphs to show up. 
