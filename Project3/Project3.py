@@ -497,6 +497,81 @@ def Q26To28(qNum, n_splits=10):
 
     return RMSE
 
+# 
+# ---------------------------------------------------------
+# Begin Q30-34
+# ---------------------------------------------------------
+# 
+class NaiveCF(object):
+    
+    def __init__(self):
+        self.est=None
+    
+    def fit(self, trainset):
+        ratings = trainset.all_ratings()
+        self.est = np.array([0.0 for x in trainset.all_users()])
+        d = {}
+        for r in ratings:
+            key = r[0]
+            val = r[2]
+            if key in d.keys():
+                d[key] = np.append(d[key], val)
+            else:
+                d[key] = np.array([val])
+#         print(d[1])
+#         print(np.mean(d[1]))
+#         print(d)
+        for k in d.keys():
+            self.est[k] = np.mean(d[k])
+#             print(k, self.est[k], d[k])
+#         print(self.est)
+        
+        
+    # simplified test function, only return tr (true rating)
+    # and est (estimated rating)
+    def test(self, testset):
+        uid = np.array([])
+        iid = np.array([])
+        tr = np.array([])
+        est = np.array([])
+        for t in testset:
+            uid = np.append(uid, t[0])
+            iid = np.append(iid, t[1])
+            tr = np.append(tr, t[2])
+            est = np.append(est, self.est[t[0]-1])
+        return uid, iid, tr, est
+
+def Q30to33(qNum):
+    data = load_data()
+    data_full = data.build_full_trainset()
+    pop, unpop, highVar = classifyMovies()
+    kf = KFold(n_splits=10)
+    ncf = NaiveCF()
+    ncf.fit(data_full)
+    subRMSE = np.array([])
+    iter = 1
+    for trainSet, testSet in kf.split(data):
+        if qNum == 31:
+            testSet = list(filter(lambda x: x[1] in pop, testSet))
+        if qNum == 32:
+            testSet = list(filter(lambda x: x[1] in unpop, testSet))
+        if qNum == 33:
+            testSet = list(filter(lambda x: x[1] in highVar, testSet))
+        nTest = len(testSet)
+        print("Split " + str(iter) + ": test set size after trimming: %d", nTest)
+        iter += 1
+        uid, iid, tr, est = ncf.test(testSet)
+        subsubRMSE = pow(est-tr, 2)
+        subsubRMSE = np.sum(subsubRMSE)
+        subRMSE = np.append(subRMSE, np.sqrt(subsubRMSE/nTest))
+    RMSE = np.mean(subRMSE)
+    print("Q"+str(qNum)+" has RMSE "+str(RMSE))
+# 
+# ---------------------------------------------------------
+# End Q30-34
+# ---------------------------------------------------------
+# 
+
 # Note that this function, precision_recall, is referenced from: 
 # http://surprise.readthedocs.io/en/stable/FAQ.html 
 def precision_recall (predictions, t):
@@ -630,4 +705,5 @@ if __name__ == '__main__':
     # meanRMSE, meanMAE = Q17()
     # Q15and22and29(22, bestK=18)
     #Q23(col=0)
-    Q39()
+    for q in [30,31,32,33]:
+        Q30to33(q)
