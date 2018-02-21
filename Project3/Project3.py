@@ -500,7 +500,7 @@ def Q26To28(qNum, n_splits=10):
 # Note that this function, precision_recall, is referenced from: 
 # http://surprise.readthedocs.io/en/stable/FAQ.html 
 def precision_recall (predictions, t):
-    threshold = 3.5 
+    threshold = 3
     user_est_true = defaultdict(list)
     for uid, _, true_r, est, _ in predictions:
         user_est_true[uid].append((est, true_r))
@@ -508,31 +508,21 @@ def precision_recall (predictions, t):
     precisions = dict()
     recalls = dict()
     for uid, user_ratings in user_est_true.items():
-
-        # Sort user ratings by estimated value
         user_ratings.sort(key=lambda x: x[0], reverse=True)
-
-        # Number of relevant items
         n_rel = sum((true_r >= threshold) for (_, true_r) in user_ratings)
-
-        # Number of recommended items in top t
-        n_rec_k = sum((est >= threshold) for (est, _) in user_ratings[:t])
-
-        # Number of relevant and recommended items in top t
-        n_rel_and_rec_k = sum(((true_r >= threshold) and (est >= threshold))
+        n_rec_t = sum((est >= threshold) for (est, _) in user_ratings[:t])
+        n_rel_and_rec_t = sum(((true_r >= threshold) and (est >= threshold))
                               for (est, true_r) in user_ratings[:t])
-
-        # Precision@t: Proportion of recommended items that are relevant
-        precisions[uid] = n_rel_and_rec_k / n_rec_k if n_rec_k != 0 else 1
-
-        # Recall@t: Proportion of relevant items that are recommended
-        recalls[uid] = n_rel_and_rec_k / n_rel if n_rel != 0 else 1
+        precisions[uid] = n_rel_and_rec_t / n_rec_t if n_rec_t != 0 else 1
+        recalls[uid] = n_rel_and_rec_t / n_rel if n_rel != 0 else 1
 
     return precisions, recalls
 
 def Q36To38(qNum):
+
+    print ("problem ",qNum)
+
     data = load_data()
-    kf = KFold(n_splits=10)
     sim_options = {
         'name': 'pearson_baseline',
         'shrinkage': 0  # no shrinkage
@@ -556,10 +546,10 @@ def Q36To38(qNum):
         model = SVD(n_factors = k_SVD)
 
     # sweep t from 1 to 25
-    t = 1 
     precision_arr = []
     recall_arr = []
     for t in range (1,26):
+        kf = KFold(n_splits=10)
         for trainSet, testSet in kf.split(data):
             sub_precisions = 0.0
             sub_recalls = 0.0
@@ -576,8 +566,54 @@ def Q36To38(qNum):
 
     t_list = list(range (1,26))
     ys = [[precision_arr, 'mean precisions'], [recall_arr, 'mean recalls']]
-    make_plot(t_list, ys, 'recommended item size t','Precision/Recall')
-    return 
+
+    print ("model name: ",modelName)
+
+    # make_plot(t_list, ys, 'recommended item size t','Precision')
+    # precision vs t
+    title_ = "precision vs t for: " + modelName
+    make_plot(t_list, [[precision_arr, 'mean precisions']], 'recommended item size t','Precision', title=title_)
+    # recall vs t
+    title_ = "recall vs t for: " + modelName
+    make_plot(t_list, [[recall_arr, 'mean recalls']], 'recommended item size t','Recall', title=title_)
+    # precision vs recall 
+    title_ = "precision vs recall for: " + modelName
+    #make_plot([recall_arr, 'mean recalls'], [[precision_arr, 'mean precisions']], 'Recall','Precision', title = title_)
+
+    plt.plot(recall_arr, precision_arr, label = modelName)
+    xlabel = "recall"
+    ylabel = "precision"
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid()
+    plt.title(title_)
+    plt.show()
+
+
+    return precision_arr, recall_arr 
+
+def Q39():
+    # KNN
+    precision_knn, recall_knn = Q36To38(36)
+    # NMF
+    precision_nmf, recall_nmf = Q36To38(37)
+    # SVD 
+    precision_svd, recall_svd = Q36To38(38)
+
+    # precision vs recall 
+    plt.plot(recall_knn, precision_knn, label = "KNNWithMeans")
+    plt.plot(recall_nmf, precision_nmf, label = "NMF")
+    plt.plot(recall_svd, precision_svd, label = "SVD")
+    xlabel = "recall"
+    ylabel = "precision"
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid()
+    plt.title("precision-recall curve for KNN, NMF, SVD")
+    plt.show()
+
 
 
 if __name__ == '__main__':
@@ -594,4 +630,4 @@ if __name__ == '__main__':
     # meanRMSE, meanMAE = Q17()
     # Q15and22and29(22, bestK=18)
     #Q23(col=0)
-    Q36To38(36)
+    Q39()
