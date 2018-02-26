@@ -408,7 +408,7 @@ def Q17():
 
     meanRMSE, meanMAE = [], []
     start = time.time()
-    for k in range(2, 52, 2):
+    for k in range(16, 24, 2):
         nmf = NMF(n_factors=k)
         out = cross_validate(nmf, data, measures=['RMSE', 'MAE'], cv=10)
         meanRMSE.append(np.mean(out['test_rmse']))
@@ -416,7 +416,7 @@ def Q17():
     cv_time = str(datetime.timedelta(seconds=int(time.time() - start)))
     print("Total time used for cross validation: " + cv_time)
 
-    k = list(range(2, 52, 2))
+    k = list(range(16, 24, 2))
     ys = [[meanRMSE, 'mean RMSE'], [meanMAE, 'mean MAE']]
     make_plot(k, ys, 'Number of Latent Factors', 'ratings')
     return meanRMSE, meanMAE
@@ -756,4 +756,4 @@ if __name__ == '__main__':
     #Q23(col=0)
     # for q in [30,31,32,33]:
     #     Q30to33(q)
-    Q34()
+    Q17()
