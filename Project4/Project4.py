@@ -74,7 +74,7 @@ def encode_day(days):
 	return days
 
 def Q2a():
-	X = data_frame.ix [:,[0,1,2,3,4,6]].values
+	X = data_frame.ix [:,[0,1,2,3,4]].values
 	X [:,1] = encode_day(X[:,1])
 	X [:,3] = encode_workflow(X[:,3])
 	X [:,4] = encode_files(X[:,4])
