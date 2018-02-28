@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
-from sklearn.model_selection import cross_val_predict
-from sklearn import linear_model
+from sklearn.model_selection import cross_val_predict, KFold 
+from sklearn import linear_model, cross_validation
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from math import sqrt
+from sklearn import feature_selection
+from sklearn.feature_selection import VarianceThreshold
 
 
 data_frame = pd.read_csv("./data/network_backup_dataset.csv")
@@ -72,65 +74,80 @@ def encode_day(days):
 	return days
 
 def Q2a():
-	# day of week 
 	X = data_frame.ix [:,[0,1,2,3,4,6]].values
-	# day 
 	X [:,1] = encode_day(X[:,1])
-	# work flow 
 	X [:,3] = encode_workflow(X[:,3])
 	X [:,4] = encode_files(X[:,4])
 
 	y = data_frame.ix [:,5].values
-
 	lr = linear_model.LinearRegression()
-	predicted = cross_val_predict(lr, X, y, cv=10) 
 
-	# rmse
+	kf = KFold(n_splits=10)
 
-	rmse = sqrt(mean_squared_error(y, predicted))
-	print ('rmse: ', rmse)
+	rmse_test = []
+	rmse_train = []
 
-	print ('plotting fitted values against true values...')
+	# 10 folds 
+	for train_index, test_index in kf.split(X):
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = y[train_index], y[test_index]
+		lr.fit(X_train, y_train)
+		y_predicted = lr.predict(X_test)
+		y_predicted_train = lr.predict(X_train)
+		rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
+		rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+	# TODO: need to double check how to report test and train rmse. refer to Piazza 
+	print ('test rmse: ', np.mean(rmse_test))
+	print ('train rmse: ', np.mean(rmse_train))
 
+	# TODO: do we use all data to plot scatterplot? 
+	# plot scatter 
+	lr.fit(X, y)
+	y_predicted = lr.predict(X)
 	fig, ax = plt.subplots()
-	ax.scatter(y, predicted, edgecolors=(0, 0, 0))
+	ax.scatter(y, y_predicted, edgecolors=(0, 0, 0))
 	ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
 	ax.set_xlabel('Measured')
 	ax.set_ylabel('Predicted')
 	plt.show()
 
-	print ('plotting residuals versus fitted values...')
-	# residual
-
-	y_residual = y - predicted 
+	# plot residual 
+	y_residual = y - y_predicted 
 	fig, ax = plt.subplots()
-	ax.scatter(predicted, y_residual, edgecolors=(0, 0, 0))
+	ax.scatter(y_predicted, y_residual, edgecolors=(0, 0, 0))
 	ax.set_xlabel('Fitted')
 	ax.set_ylabel('Residual')
 	plt.show()
 
-	#standardize numerical features 
-
-	print ('plotting fitted values against true values after standardization...')
+	# TODO: 
+	# standardize 
+	# standardization shows no change right now. need to fix 
 
 	x_scaler = StandardScaler()
 	X_stan = x_scaler.fit_transform(X)
 	y_scaler = StandardScaler()
 	y_stan = y_scaler.fit_transform(y[:,None])[:,0]
 
-	predicted_stan = cross_val_predict(lr, X_stan, y_stan, cv=10) 
+	for train_index, test_index in kf.split(X_stan):
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = y[train_index], y[test_index]
+		lr.fit(X_train, y_train)
+		y_predicted = lr.predict(X_test)
+		y_predicted_train = lr.predict(X_train)
+		rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
+		rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+	print ('test rmse: ', np.mean(rmse_test))
+	print ('train rmse: ', np.mean(rmse_train))
 
-	fig_stan, ax_stan = plt.subplots()
-	ax_stan.scatter(y_stan, predicted_stan, edgecolors=(0, 0, 0))
-	ax_stan.plot([y_stan.min(), y_stan.max()], [y_stan.min(), y_stan.max()], 'k--', lw=4)
-	ax_stan.set_xlabel('Measured')
-	ax_stan.set_ylabel('Predicted')
-	plt.show()
+	# predicted_stan = cross_val_predict(lr, X_stan, y_stan, cv=10) 
 
+	# fig_stan, ax_stan = plt.subplots()
+	# ax_stan.scatter(predicted_stan, X, edgecolors=(0, 0, 0))
+	# ax_stan.plot([predicted_stan.min(), predicted_stan.max()], [predicted_stan.min(), predicted_stan.max()], 'k--', lw=4)
+	# ax_stan.set_xlabel('Measured')
+	# ax_stan.set_ylabel('Predicted')
+	# plt.show()
 
-	# file name 
-
-	# print (X)
 
 if __name__ == '__main__':
 	#Q1('a')
