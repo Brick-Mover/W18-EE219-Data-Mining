@@ -96,6 +96,7 @@ def Q2a():
 		y_predicted_train = lr.predict(X_train)
 		rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
 		rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+
 	# TODO: need to double check how to report test and train rmse. refer to Piazza 
 	print ('test rmse: ', np.mean(rmse_test))
 	print ('train rmse: ', np.mean(rmse_train))
@@ -125,8 +126,6 @@ def Q2a():
 
 	x_scaler = StandardScaler()
 	X_stan = x_scaler.fit_transform(X)
-	y_scaler = StandardScaler()
-	y_stan = y_scaler.fit_transform(y[:,None])[:,0]
 
 	for train_index, test_index in kf.split(X_stan):
 		X_train, X_test = X[train_index], X[test_index]
@@ -139,14 +138,12 @@ def Q2a():
 	print ('test rmse: ', np.mean(rmse_test))
 	print ('train rmse: ', np.mean(rmse_train))
 
-	# predicted_stan = cross_val_predict(lr, X_stan, y_stan, cv=10) 
-
-	# fig_stan, ax_stan = plt.subplots()
-	# ax_stan.scatter(predicted_stan, X, edgecolors=(0, 0, 0))
-	# ax_stan.plot([predicted_stan.min(), predicted_stan.max()], [predicted_stan.min(), predicted_stan.max()], 'k--', lw=4)
-	# ax_stan.set_xlabel('Measured')
-	# ax_stan.set_ylabel('Predicted')
-	# plt.show()
+	fig_stan, ax_stan = plt.subplots()
+	ax_stan.scatter(y_test, y_predicted, edgecolors=(0, 0, 0))
+	ax_stan.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
+	ax_stan.set_xlabel('Measured')
+	ax_stan.set_ylabel('Predicted')
+	plt.show()
 
 
 if __name__ == '__main__':
