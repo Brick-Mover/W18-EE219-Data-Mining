@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd 
+import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import cross_val_predict, KFold 
+from sklearn.model_selection import cross_val_predict, KFold
 from sklearn import linear_model, cross_validation
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
@@ -10,6 +10,14 @@ from sklearn import feature_selection
 from sklearn.feature_selection import VarianceThreshold, f_regression, mutual_info_regression, SelectKBest
 from sklearn.ensemble import RandomForestRegressor
 
+"""
+CONSTANTS HERE
+"""
+N_WORKFLOW = 5
+N_FILE = 30
+N_DAY = 7
+N_WEEK = 15
+N_HOUR = 24
 
 """
 CONSTANTS HERE
@@ -167,6 +175,7 @@ def scatter(x, ys, xlabel=None, ylabel=None, xticks=None, grid=False, title=None
     if title is not None:
         plt.title(title)
     plt.show()
+
 
 def Q2a(option):
 	X,y = getXy()
