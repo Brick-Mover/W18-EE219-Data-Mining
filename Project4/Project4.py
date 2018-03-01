@@ -9,6 +9,8 @@ from math import sqrt
 from sklearn import feature_selection
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.neural_network import MLPClassifier
+import collections
 
 """
 CONSTANTS HERE
@@ -80,23 +82,19 @@ def one_hot(total: int, one: int):
     return result
 
 
-def encode_workflow(workflow, useOnehot=False):
+def encode_workflow(workflow):
     for i in range(len(workflow)):
         workflow[i] = int(workflow[i].split('_')[-1])
-        if useOnehot:
-            workflow[i] = one_hot(N_WORKFLOW, workflow[i])
     return workflow
 
 
-def encode_files(files, useOnehot=False):
+def encode_files(files):
     for i in range(len(files)):
         files[i] = int (files[i].split('_')[-1])
-        if useOnehot:
-            files[i] = one_hot(N_FILE, files[i])
     return files
 
 
-def encode_day(days, useOnehot=False):
+def encode_day(days):
     week_days = { 'Monday' : 1,
                   'Tuesday' : 2,
                   'Wednesday' : 3,
@@ -106,20 +104,33 @@ def encode_day(days, useOnehot=False):
                   'Sunday' : 7 }
     for i in range(len(days)):
         days[i] = week_days[days[i]]
-        if useOnehot:
-            days[i] = one_hot(N_DAY, days[i]-1)
     return days
+
+
+def flatten(l):
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            yield from flatten(el)
+        else:
+            yield el
 
 
 def getXy(useOnehot=False):
     X = data_frame.iloc[:,[0,1,2,3,4]].values
-    X[:,1] = encode_day(X[:,1], useOnehot)
-    X[:,3] = encode_workflow(X[:,3], useOnehot)
-    X[:,4] = encode_files(X[:,4], useOnehot)
+    X[:,1] = encode_day(X[:,1])
+    X[:,3] = encode_workflow(X[:,3])
+    X[:,4] = encode_files(X[:,4])
     if useOnehot:
-        for i in range(len(X[:0])):
-            X[:0][i] = one_hot(N_WEEK, X[:0][i]-1)
-            X[:2][i] = one_hot(N_HOUR, X[:2][i]-1)
+        for r in range(X.shape[0]):
+            X[r][0] = one_hot(N_WEEK, X[r][0]-1)
+            X[r][1] = one_hot(N_DAY, X[r][1]-1)
+            X[r][2] = one_hot(N_HOUR, X[r][2]-1)
+            X[r][3] = one_hot(N_WORKFLOW, X[r][3])
+            X[r][4] = one_hot(N_FILE, X[r][4])
+        X = X.tolist()
+        for i in range(len(X)):
+            X[i] = [item for sublist in X[i] for item in sublist]
+        X = np.array(X)
     y = data_frame.iloc[:,5].values
     return X,y
 
@@ -195,10 +206,19 @@ def Q2a():
 
     lr_stan.fit(X_stan, y)
     y_predicted = lr_stan.predict(X_stan)
-    title = 'Fitted against ture values'
+    title = 'Fitted against true values'
     ys = [[y, 'True'],[y_predicted, 'Fitted']]
     scatter(x_plt, ys, title=title)
 
+
+def Q2c():
+    X, y = getXy(useOnehot=True)
+    activity = ['relu', 'logistic', 'tanh']
+    nHiddenUnits = range(50, 200, 5)
+    for a in activity:
+        for n in nHiddenUnits:
+            nn = MLPClassifier((n,), activation=a)
+            cross_val(nn, X, y)
 
 if __name__ == '__main__':
     #Q1('a')
