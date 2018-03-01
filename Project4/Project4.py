@@ -127,17 +127,23 @@ def getXy(useOnehot=False):
 def cross_val(clf, X, y):
     kf = KFold(n_splits=10)
 
-    rmse_test = []
-    rmse_train = []
+    # squre root errors sr_test and sr_train
+    sr_test = np.array([])
+    sr_train = np.array([])
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         clf.fit(X_train, y_train)
-        y_predicted = clf.predict(X_test)
-        y_predicted_train = clf.predict(X_train)
-        rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
-        rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+        y_pred_test = clf.predict(X_test)
+        y_pred_train = clf.predict(X_train)
+        sub_sr_test = pow(np.array(y_test)-np.array(y_pred_test), 2)
+        sr_test = np.append(sr_test, sub_sr_test)
+        sub_sr_train = pow(np.array(y_train)-np.array(y_pred_train), 2)
+        sr_train = np.append(sr_train, sub_sr_train)
 
+    rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
+    rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
+    print(sr_test.size, sr_train.size)
     # TODO: need to double check how to report test and train rmse. refer to Piazza
     print ('test rmse: ', np.mean(rmse_test))
     print ('train rmse: ', np.mean(rmse_train))
