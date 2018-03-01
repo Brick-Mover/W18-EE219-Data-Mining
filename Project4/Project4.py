@@ -10,10 +10,19 @@ from sklearn import feature_selection
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.ensemble import RandomForestRegressor
 
+"""
+CONSTANTS HERE
+"""
+N_WORKFLOW = 5
+N_FILE = 30
+N_DAY = 7
+N_WEEK = 15
+N_HOUR = 24
+
 
 data_frame = pd.read_csv("./data/network_backup_dataset.csv")
 column_names = data_frame.columns
-counter = 0;
+counter = 0
 print("column index --- name:")
 for i in column_names:
 	print("           " + str(counter) + " --- "+ i)
@@ -41,7 +50,7 @@ for label_list, row_info in data_frame.groupby([column_names[3],column_names[4]]
 
 
 def problem1_plot(period):
-	x = [a for a in range(0,period+1)]
+	x = [a for a in range(0, period+1)]
 	for work_flow_id in prepare_data:
 		yaxis = [0] * (period+1)
 		for day in range(0, period+1, 1):
@@ -64,30 +73,56 @@ def Q1(option):
 	elif option == 'b':
 		problem1_plot(105)
 
-def encode_workflow(workflow):
+
+def one_hot(total: int, one: int):
+	result = [0] * total
+	result[one] = 1
+	return result
+
+
+def encode_workflow(workflow, useOnehot=False):
 	for i in range(len(workflow)):
-		workflow[i] = int (workflow[i].split('_')[-1])
+		workflow[i] = int(workflow[i].split('_')[-1])
+		if useOnehot:
+			workflow[i] = one_hot(N_WORKFLOW, workflow[i])
 	return workflow 
 
-def encode_files (files):
+
+def encode_files(files, useOnehot=False):
 	for i in range(len(files)):
 		files[i] = int (files[i].split('_')[-1])
-	return files 
+		if useOnehot:
+			files[i] = one_hot(N_FILE, files[i])
+	return files
 
-def encode_day(days):
-	week_days = {'Monday' : 1, 'Tuesday' : 2, 'Wednesday' : 3 , 'Thursday' : 4, 'Friday' : 5,
-'Saturday' : 6, 'Sunday' : 7 }
+
+def encode_day(days, useOnehot=False):
+	week_days = { 'Monday' : 1,
+				  'Tuesday' : 2,
+				  'Wednesday' : 3,
+				  'Thursday' : 4,
+				  'Friday' : 5,
+				  'Saturday' : 6,
+				  'Sunday' : 7 }
 	for i in range(len(days)):
-		days[i] = week_days ['Monday']
+		days[i] = week_days[days[i]]
+		if useOnehot:
+			days[i] = one_hot(N_DAY, days[i]-1)
 	return days
 
-def getXy():
-	X = data_frame.ix [:,[0,1,2,3,4]].values
-	X [:,1] = encode_day(X[:,1])
-	X [:,3] = encode_workflow(X[:,3])
-	X [:,4] = encode_files(X[:,4])
-	y = data_frame.ix [:,5].values
+
+def getXy(useOnehot=False):
+	X = data_frame.iloc[:,[0,1,2,3,4]].values
+	X[:,1] = encode_day(X[:,1], useOnehot)
+	X[:,3] = encode_workflow(X[:,3], useOnehot)
+	X[:,4] = encode_files(X[:,4], useOnehot)
+	if useOnehot:
+		for i in range(len(X[:0])):
+			X[:0][i] = one_hot(N_WEEK, X[:0][i]-1)
+			X[:2][i] = one_hot(N_HOUR, X[:2][i]-1)
+	y = data_frame.iloc[:,5].values
 	return X,y
+
 
 def cross_val(clf, X, y):
 	kf = KFold(n_splits=10)
