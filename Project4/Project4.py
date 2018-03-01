@@ -107,6 +107,24 @@ def cross_val(clf, X, y):
 	print ('test rmse: ', np.mean(rmse_test))
 	print ('train rmse: ', np.mean(rmse_train))
 
+# 
+# ys is [[y, 'label'],...]
+# 
+def scatter(x, ys, xlabel=None, ylabel=None, xticks=None, grid=False, title=None):
+    for y, label in ys:
+        plt.scatter(x, y, s=1, marker='.', label=label)
+    if xlabel is not None:
+    	plt.xlabel(xlabel)
+    if ylabel is not None:
+    	plt.ylabel(ylabel)
+    if xticks is not None:
+        plt.xticks(x)
+    plt.legend()
+    if grid == True:
+        plt.grid()
+    if title is not None:
+        plt.title(title)
+    plt.show()
 
 def Q2a():
 	X,y = getXy()
@@ -118,20 +136,18 @@ def Q2a():
 	# plot scatter 
 	lr.fit(X, y)
 	y_predicted = lr.predict(X)
+	x_plt = [x for x in range(len(y))]
+	title = 'Fitted against ture values'
+	ys = [[y, 'Ture'], [y_predicted, 'Fitted']]
 	fig, ax = plt.subplots()
-	ax.scatter(y, y_predicted, edgecolors=(0, 0, 0))
-	ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
-	ax.set_xlabel('Measured')
-	ax.set_ylabel('Predicted')
-	plt.show()
+	scatter(x_plt, ys, title=title)
+
 
 	# plot residual 
 	y_residual = y - y_predicted 
-	fig, ax = plt.subplots()
-	ax.scatter(y_predicted, y_residual, edgecolors=(0, 0, 0))
-	ax.set_xlabel('Fitted')
-	ax.set_ylabel('Residual')
-	plt.show()
+	title = 'Residual against fitted values'
+	ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+	scatter(x_plt, ys, title=title)
 
 	# TODO: 
 	# standardize 
@@ -139,26 +155,14 @@ def Q2a():
 
 	x_scaler = StandardScaler()
 	X_stan = x_scaler.fit_transform(X)
-	cross_val(lr, X_stan, y)
+	lr_stan = linear_model.LinearRegression()
+	cross_val(lr_stan, X_stan, y)
 
-	# for train_index, test_index in kf.split(X_stan):
-	# 	X_train, X_test = X[train_index], X[test_index]
-	# 	y_train, y_test = y[train_index], y[test_index]
-	# 	lr.fit(X_train, y_train)
-	# 	y_predicted = lr.predict(X_test)
-	# 	y_predicted_train = lr.predict(X_train)
-	# 	rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
-	# 	rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
-	# print ('test rmse: ', np.mean(rmse_test))
-	# print ('train rmse: ', np.mean(rmse_train))
-	lr.fit(X_stan, y)
-	y_predicted = lr.predict(X_stan)
-	fig_stan, ax_stan = plt.subplots()
-	ax_stan.scatter(y, y_predicted, edgecolors=(0, 0, 0))
-	ax_stan.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
-	ax_stan.set_xlabel('Measured')
-	ax_stan.set_ylabel('Predicted')
-	plt.show()
+	lr_stan.fit(X_stan, y)
+	y_predicted = lr_stan.predict(X_stan)
+	title = 'Fitted against ture values'
+	ys = [[y, 'True'],[y_predicted, 'Fitted']]
+	scatter(x_plt, ys, title=title)
 
 
 if __name__ == '__main__':
