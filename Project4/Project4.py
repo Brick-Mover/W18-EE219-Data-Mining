@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 from sklearn import feature_selection
-from sklearn.feature_selection import VarianceThreshold
+from sklearn.feature_selection import VarianceThreshold, f_regression, mutual_info_regression, SelectKBest
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPClassifier
 import collections
@@ -138,20 +138,27 @@ def getXy(useOnehot=False):
 def cross_val(clf, X, y):
     kf = KFold(n_splits=10)
 
-    rmse_test = []
-    rmse_train = []
+    # squre root errors sr_test and sr_train
+    sr_test = np.array([])
+    sr_train = np.array([])
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         clf.fit(X_train, y_train)
-        y_predicted = clf.predict(X_test)
-        y_predicted_train = clf.predict(X_train)
-        rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
-        rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+        y_pred_test = clf.predict(X_test)
+        y_pred_train = clf.predict(X_train)
+        sub_sr_test = pow(np.array(y_test)-np.array(y_pred_test), 2)
+        sr_test = np.append(sr_test, sub_sr_test)
+        sub_sr_train = pow(np.array(y_train)-np.array(y_pred_train), 2)
+        sr_train = np.append(sr_train, sub_sr_train)
 
+    rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
+    rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
+    print(sr_test.size, sr_train.size)
     # TODO: need to double check how to report test and train rmse. refer to Piazza
     print ('test rmse: ', np.mean(rmse_test))
     print ('train rmse: ', np.mean(rmse_train))
+    return rmse_test, rmse_train
 
 # 
 # ys is [[y, 'label'],...]
@@ -172,43 +179,66 @@ def scatter(x, ys, xlabel=None, ylabel=None, xticks=None, grid=False, title=None
         plt.title(title)
     plt.show()
 
-def Q2a():
+
+def Q2a(option):
     X,y = getXy()
 
-    lr = linear_model.LinearRegression()
-    cross_val(lr, X, y)
+    if (option == 'i'):
+        lr = linear_model.LinearRegression()
+        cross_val(lr, X, y)
 
-    # TODO: do we use all data to plot scatterplot?
-    # plot scatter
-    lr.fit(X, y)
-    y_predicted = lr.predict(X)
-    x_plt = [x for x in range(len(y))]
-    title = 'Fitted against ture values'
-    ys = [[y, 'Ture'], [y_predicted, 'Fitted']]
-    fig, ax = plt.subplots()
-    scatter(x_plt, ys, title=title)
+        # plot scatter
+        lr.fit(X, y)
+        y_predicted = lr.predict(X)
+        x_plt = [x for x in range(len(y))]
+        title = 'Fitted against true values'
+        ys = [[y, 'True'], [y_predicted, 'Fitted']]
+        fig, ax = plt.subplots()
+        scatter(x_plt, ys, title=title)
 
+        # plot residual
+        y_residual = y - y_predicted
+        title = 'Residual against fitted values'
+        ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+        scatter(x_plt, ys, title=title)
+    elif (option == 'ii'):
+        # standardize
+        x_plt = [x for x in range(len(y))]
+        x_scaler = StandardScaler()
+        X_stan = x_scaler.fit_transform(X)
+        lr_stan = linear_model.LinearRegression()
+        cross_val(lr_stan, X_stan, y)
 
-    # plot residual
-    y_residual = y - y_predicted
-    title = 'Residual against fitted values'
-    ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
-    scatter(x_plt, ys, title=title)
+        lr_stan.fit(X_stan, y)
+        y_predicted = lr_stan.predict(X_stan)
+        title = 'Fitted against true values'
+        ys = [[y, 'True'],[y_predicted, 'Fitted']]
+        scatter(x_plt, ys, title=title)
+    elif (option == 'iii'):
+        # f_regression and mutual info regression
+        F, p = f_regression(X,y)
+        mi = mutual_info_regression(X,y)
+        print (F)
+        print (mi)
 
-    # TODO:
-    # standardize
-    # standardization shows no change right now. need to fix
+        X_reg = SelectKBest(f_regression, k=3).fit_transform(X,y)
+        X_mi = SelectKBest(mutual_info_regression, k=3).fit_transform(X,y)
 
-    x_scaler = StandardScaler()
-    X_stan = x_scaler.fit_transform(X)
-    lr_stan = linear_model.LinearRegression()
-    cross_val(lr_stan, X_stan, y)
+        lr_reg = linear_model.LinearRegression()
+        cross_val(lr_reg, X_reg, y)
 
-    lr_stan.fit(X_stan, y)
-    y_predicted = lr_stan.predict(X_stan)
-    title = 'Fitted against true values'
-    ys = [[y, 'True'],[y_predicted, 'Fitted']]
-    scatter(x_plt, ys, title=title)
+        lr_mi = linear_model.LinearRegression()
+        cross_val(lr_mi, X_mi, y)
+
+def Q2b(option):
+    X,y = getXy()
+
+    if(option == 'i'):
+        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
+            max_features=5, oob_score=True)
+        cross_val(regr, X, y)
+        regr.fit(X,y)
+        print('OOB Score is ', 1-regr.oob_score_)
 
 
 def Q2c():
