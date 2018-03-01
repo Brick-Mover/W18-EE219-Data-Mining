@@ -156,6 +156,7 @@ def cross_val(clf, X, y):
     # TODO: need to double check how to report test and train rmse. refer to Piazza
     print ('test rmse: ', np.mean(rmse_test))
     print ('train rmse: ', np.mean(rmse_train))
+    return rmse_test, rmse_train
 
 # 
 # ys is [[y, 'label'],...]
@@ -227,8 +228,19 @@ def Q2a(option):
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
 
+def Q2b(option):
+    X,y = getXy()
+
+    if(option == 'i'):
+        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
+            max_features=5, oob_score=True)
+        cross_val(regr, X, y)
+        regr.fit(X,y)
+        print('OOB Score is ', 1-regr.oob_score_)
+
 
 if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
-    Q2a('i')
+    # Q2a('i')
+    Q2b('i')
