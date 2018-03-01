@@ -178,57 +178,57 @@ def scatter(x, ys, xlabel=None, ylabel=None, xticks=None, grid=False, title=None
 
 
 def Q2a(option):
-	X,y = getXy()
+    X,y = getXy()
 
-	if (option == 'i'): 
-		lr = linear_model.LinearRegression()
-		cross_val(lr, X, y)
+    if (option == 'i'): 
+        lr = linear_model.LinearRegression()
+        cross_val(lr, X, y)
 
-		# plot scatter 
-		lr.fit(X, y)
-		y_predicted = lr.predict(X)
-		x_plt = [x for x in range(len(y))]
-		title = 'Fitted against ture values'
-		ys = [[y, 'Ture'], [y_predicted, 'Fitted']]
-		fig, ax = plt.subplots()
-		scatter(x_plt, ys, title=title)
+        # plot scatter 
+        lr.fit(X, y)
+        y_predicted = lr.predict(X)
+        x_plt = [x for x in range(len(y))]
+        title = 'Fitted against ture values'
+        ys = [[y, 'Ture'], [y_predicted, 'Fitted']]
+        fig, ax = plt.subplots()
+        scatter(x_plt, ys, title=title)
 
-		# plot residual 
-		y_residual = y - y_predicted 
-		title = 'Residual against fitted values'
-		ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
-		scatter(x_plt, ys, title=title)
-	elif (option == 'ii'):
-		# standardize 
-		x_plt = [x for x in range(len(y))]
-		x_scaler = StandardScaler()
-		X_stan = x_scaler.fit_transform(X)
-		lr_stan = linear_model.LinearRegression()
-		cross_val(lr_stan, X_stan, y)
+        # plot residual 
+        y_residual = y - y_predicted 
+        title = 'Residual against fitted values'
+        ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+        scatter(x_plt, ys, title=title)
+    elif (option == 'ii'):
+        # standardize 
+        x_plt = [x for x in range(len(y))]
+        x_scaler = StandardScaler()
+        X_stan = x_scaler.fit_transform(X)
+        lr_stan = linear_model.LinearRegression()
+        cross_val(lr_stan, X_stan, y)
 
-		lr_stan.fit(X_stan, y)
-		y_predicted = lr_stan.predict(X_stan)
-		title = 'Fitted against ture values'
-		ys = [[y, 'True'],[y_predicted, 'Fitted']]
-		scatter(x_plt, ys, title=title)
-	elif (option == 'iii'):
-		# f_regression and mutual info regression 
-		F, p = f_regression(X,y)
-		mi = mutual_info_regression(X,y)
-		print (F)
-		print (mi)
+        lr_stan.fit(X_stan, y)
+        y_predicted = lr_stan.predict(X_stan)
+        title = 'Fitted against ture values'
+        ys = [[y, 'True'],[y_predicted, 'Fitted']]
+        scatter(x_plt, ys, title=title)
+    elif (option == 'iii'):
+        # f_regression and mutual info regression 
+        F, p = f_regression(X,y)
+        mi = mutual_info_regression(X,y)
+        print (F)
+        print (mi)
 
-		X_reg = SelectKBest(f_regression, k=3).fit_transform(X,y)
-		X_mi = SelectKBest(mutual_info_regression, k=3).fit_transform(X,y)
+        X_reg = SelectKBest(f_regression, k=3).fit_transform(X,y)
+        X_mi = SelectKBest(mutual_info_regression, k=3).fit_transform(X,y)
+        
+        lr_reg = linear_model.LinearRegression()
+        cross_val(lr_reg, X_reg, y)
 
-		lr_reg = linear_model.LinearRegression()
-		cross_val(lr_reg, X_reg, y)
-
-		lr_mi = linear_model.LinearRegression()
-		cross_val(lr_mi, X_mi, y)
+        lr_mi = linear_model.LinearRegression()
+        cross_val(lr_mi, X_mi, y)
 
 
 if __name__ == '__main__':
-	#Q1('a')
-	#Q1('b')
-	Q2a('iii')
+    #Q1('a')
+    #Q1('b')
+    Q2a('i')
