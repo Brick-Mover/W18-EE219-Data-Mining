@@ -1,0 +1,20 @@
+Week #,Day of Week,Backup Start Time - Hour of Day,Work-Flow-ID,File Name,Size of Backup (GB),Backup Time (hour)
+1,Monday,1,work_flow_0,File_0,0,0
+1,Monday,1,work_flow_2,File_12,0,0
+1,Monday,1,work_flow_2,File_13,0,0
+1,Monday,1,work_flow_2,File_14,0,0
+1,Monday,1,work_flow_2,File_16,0,0
+1,Monday,1,work_flow_2,File_17,0,0
+1,Monday,1,work_flow_3,File_18,0,0
+1,Monday,1,work_flow_3,File_19,0,0
+1,Monday,1,work_flow_3,File_20,0,0
+1,Monday,1,work_flow_3,File_21,0,0
+1,Monday,1,work_flow_3,File_22,0,0
+1,Monday,1,work_flow_3,File_23,0,0
+1,Monday,1,work_flow_0,File_1,0.020160491,1
+1,Monday,1,work_flow_0,File_2,0.019116012,1
+1,Monday,1,work_flow_0,File_3,0.019378809,1
+1,Monday,1,work_flow_0,File_4,0.018992364,1
+1,Monday,1,work_flow_0,File_5,0.020483209,1
+1,Monday,1,work_flow_1,File_6,0.040971216,1
+1,Monday,1,work_flow_1,File_7,0.039234877,1

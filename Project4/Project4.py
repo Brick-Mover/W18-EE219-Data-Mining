@@ -35,13 +35,20 @@ for label_list, row_info in data_frame.groupby([column_names[3],column_names[4]]
 def problem1_plot(period):
 	x = [a for a in range(0,period+1)]
 	for work_flow_id in prepare_data:
-		for file_name in prepare_data[work_flow_id]:
-			plt.plot(x, prepare_data[work_flow_id][file_name][:period+1], label = "file " + str(file_name))
-			plt.title(work_flow_id)
-			plt.xlabel('Days')
-			plt.ylabel('Size of Backup in GB')
-		plt.legend()
-		plt.show()
+		yaxis = [0] * (period+1)
+		for day in range(0, period+1, 1):
+			totalsize = 0
+			for file_name in prepare_data[work_flow_id]:
+				totalsize = totalsize + prepare_data[work_flow_id][file_name][day]
+			yaxis[day] = totalsize
+		#print(yaxis)
+		#print("------")	
+		plt.plot(x, yaxis, label = "work_flow_ " + str(work_flow_id))
+		plt.title(str(period) + " days period")
+		plt.xlabel('Days')
+		plt.ylabel('Total Size of Backup in GB')
+	plt.legend()
+	plt.show()
 
 def Q1(option):
 	if option == 'a':
@@ -52,3 +59,5 @@ def Q1(option):
 if __name__ == '__main__':
 	Q1('a')
 	Q1('b')
+
+
