@@ -161,9 +161,12 @@ def cross_val(clf, X, y):
 # 
 # ys is [[y, 'label'],...]
 # 
-def scatter(x, ys, xlabel=None, ylabel=None, xticks=None, grid=False, title=None):
+def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=False, title=None):
     for y, label in ys:
-        plt.scatter(x, y, s=1, marker='.', label=label)
+        if scatter:
+            plt.scatter(x, y, s=1, marker='.', label=label)
+        else:
+            plt.plot(x, y, label=label)
     if xlabel is not None:
         plt.xlabel(xlabel)
     if ylabel is not None:
@@ -192,13 +195,13 @@ def Q2a(option):
         title = 'Fitted against true values'
         ys = [[y, 'True'], [y_predicted, 'Fitted']]
         fig, ax = plt.subplots()
-        scatter(x_plt, ys, title=title)
+        make_plot(x_plt, ys, scatter=True, title=title)
 
         # plot residual 
         y_residual = y - y_predicted 
         title = 'Residual against fitted values'
         ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
-        scatter(x_plt, ys, title=title)
+        make_plot(x_plt, ys, scatter=True, title=title)
     elif (option == 'ii'):
         # standardize 
         x_plt = [x for x in range(len(y))]
@@ -211,7 +214,7 @@ def Q2a(option):
         y_predicted = lr_stan.predict(X_stan)
         title = 'Fitted against true values'
         ys = [[y, 'True'],[y_predicted, 'Fitted']]
-        scatter(x_plt, ys, title=title)
+        make_plot(x_plt, ys, scatter=True, title=title)
     elif (option == 'iii'):
         # f_regression and mutual info regression 
         F, p = f_regression(X,y)
@@ -237,10 +240,65 @@ def Q2b(option):
         cross_val(regr, X, y)
         regr.fit(X,y)
         print('OOB Score is ', 1-regr.oob_score_)
+    elif(option == 'ii'):
+        oob = np.zeros([5,200])
+        rmse_test = np.zeros([5,200])
+        for feat in range(0,5,3):
+            for tree in range(0,200,50):
+                regr = RandomForestRegressor(n_estimators=tree+1, max_depth=4, bootstrap=True,
+                    max_features=feat+1, oob_score=True)
+                sub_rmse_test, _ = cross_val(regr, X, y)
+                regr.fit(X,y)
+                sub_oob = 1-regr.oob_score_
+                rmse_test[feat][tree] = sub_rmse_test
+                oob[feat][tree] = sub_oob
+                print('feature %s and tree num %s',(feat, tree))
+
+        x_plt = [x for x in range(200)]
+        ys_rmse = []
+        for i in range(5):
+            ys_rmse.append([rmse_test[i], 'max feature '+str(i)])
+        title = 'Test-RMSE against number of trees'
+        make_plot(x_plt, ys_rmse, title=title)
+
+        ys_oob = []
+        for i in range(5):
+            ys_oob.append([oob[i], 'max feature '+str(i)])
+        title = 'Out of bag error against number of trees'
+        make_plot(x_plt, ys_oob, title=title)
+    elif(option == 'iii'):
+        oob = np.zeros([5,200])
+        rmse_test = np.zeros([5,200])
+        for feat in range(0,5,3):
+            for depth in range(0,200,50):
+                regr = RandomForestRegressor(n_estimators=20, max_depth=depth+1, bootstrap=True,
+                    max_features=feat+1, oob_score=True)
+                sub_rmse_test, _ = cross_val(regr, X, y)
+                regr.fit(X,y)
+                sub_oob = 1-regr.oob_score_
+                rmse_test[feat][depth] = sub_rmse_test
+                oob[feat][depth] = sub_oob
+                print('max feature %s and max tree depth %s',(feat, depth))
+
+        x_plt = [x for x in range(200)]
+        ys_rmse = []
+        for i in range(5):
+            ys_rmse.append([rmse_test[i], 'max feature '+str(i)])
+        title = 'Test-RMSE against max depth of trees'
+        make_plot(x_plt, ys_rmse, title=title)
+
+        ys_oob = []
+        for i in range(5):
+            ys_oob.append([oob[i], 'max feature '+str(i)])
+        title = 'Out of bag error against max depth of trees'
+        make_plot(x_plt, ys_oob, title=title)
+
+
 
 
 if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    Q2b('i')
+    # Q2a('ii')
+    Q2b('ii')
