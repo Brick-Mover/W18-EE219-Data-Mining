@@ -81,13 +81,17 @@ def encode_day(days):
 		days[i] = week_days ['Monday']
 	return days
 
-def Q2a():
+def getXy():
 	X = data_frame.ix [:,[0,1,2,3,4]].values
 	X [:,1] = encode_day(X[:,1])
 	X [:,3] = encode_workflow(X[:,3])
 	X [:,4] = encode_files(X[:,4])
-
 	y = data_frame.ix [:,5].values
+	return X,y
+
+def Q2a():
+	X,y = getXy()
+
 	lr = linear_model.LinearRegression()
 
 	kf = KFold(n_splits=10)
@@ -156,5 +160,5 @@ def Q2a():
 
 if __name__ == '__main__':
 	#Q1('a')
-	Q1('b')
-	#Q2a()
+	# Q1('b')
+	Q2a()
