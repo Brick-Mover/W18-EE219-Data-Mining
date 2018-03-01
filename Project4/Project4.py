@@ -8,7 +8,7 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 from sklearn import feature_selection
 from sklearn.feature_selection import VarianceThreshold
-
+from sklearn.ensemble import RandomForestRegressor
 
 
 data_frame = pd.read_csv("./data/network_backup_dataset.csv")
@@ -89,29 +89,30 @@ def getXy():
 	y = data_frame.ix [:,5].values
 	return X,y
 
-def Q2a():
-	X,y = getXy()
-
-	lr = linear_model.LinearRegression()
-
+def cross_val(clf, X, y):
 	kf = KFold(n_splits=10)
 
 	rmse_test = []
 	rmse_train = []
-
-	# 10 folds 
 	for train_index, test_index in kf.split(X):
 		X_train, X_test = X[train_index], X[test_index]
 		y_train, y_test = y[train_index], y[test_index]
-		lr.fit(X_train, y_train)
-		y_predicted = lr.predict(X_test)
-		y_predicted_train = lr.predict(X_train)
+		clf.fit(X_train, y_train)
+		y_predicted = clf.predict(X_test)
+		y_predicted_train = clf.predict(X_train)
 		rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
 		rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
 
 	# TODO: need to double check how to report test and train rmse. refer to Piazza 
 	print ('test rmse: ', np.mean(rmse_test))
 	print ('train rmse: ', np.mean(rmse_train))
+
+
+def Q2a():
+	X,y = getXy()
+
+	lr = linear_model.LinearRegression()
+	cross_val(lr, X, y)
 
 	# TODO: do we use all data to plot scatterplot? 
 	# plot scatter 
@@ -138,21 +139,23 @@ def Q2a():
 
 	x_scaler = StandardScaler()
 	X_stan = x_scaler.fit_transform(X)
+	cross_val(lr, X_stan, y)
 
-	for train_index, test_index in kf.split(X_stan):
-		X_train, X_test = X[train_index], X[test_index]
-		y_train, y_test = y[train_index], y[test_index]
-		lr.fit(X_train, y_train)
-		y_predicted = lr.predict(X_test)
-		y_predicted_train = lr.predict(X_train)
-		rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
-		rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
-	print ('test rmse: ', np.mean(rmse_test))
-	print ('train rmse: ', np.mean(rmse_train))
-
+	# for train_index, test_index in kf.split(X_stan):
+	# 	X_train, X_test = X[train_index], X[test_index]
+	# 	y_train, y_test = y[train_index], y[test_index]
+	# 	lr.fit(X_train, y_train)
+	# 	y_predicted = lr.predict(X_test)
+	# 	y_predicted_train = lr.predict(X_train)
+	# 	rmse_test.append(sqrt(mean_squared_error(y_test, y_predicted)))
+	# 	rmse_train.append(sqrt(mean_squared_error(y_train, y_predicted_train)))
+	# print ('test rmse: ', np.mean(rmse_test))
+	# print ('train rmse: ', np.mean(rmse_train))
+	lr.fit(X_stan, y)
+	y_predicted = lr.predict(X_stan)
 	fig_stan, ax_stan = plt.subplots()
-	ax_stan.scatter(y_test, y_predicted, edgecolors=(0, 0, 0))
-	ax_stan.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
+	ax_stan.scatter(y, y_predicted, edgecolors=(0, 0, 0))
+	ax_stan.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
 	ax_stan.set_xlabel('Measured')
 	ax_stan.set_ylabel('Predicted')
 	plt.show()
