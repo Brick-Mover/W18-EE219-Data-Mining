@@ -189,8 +189,8 @@ def Q2a(option):
         lr.fit(X, y)
         y_predicted = lr.predict(X)
         x_plt = [x for x in range(len(y))]
-        title = 'Fitted against ture values'
-        ys = [[y, 'Ture'], [y_predicted, 'Fitted']]
+        title = 'Fitted against true values'
+        ys = [[y, 'True'], [y_predicted, 'Fitted']]
         fig, ax = plt.subplots()
         scatter(x_plt, ys, title=title)
 
@@ -209,7 +209,7 @@ def Q2a(option):
 
         lr_stan.fit(X_stan, y)
         y_predicted = lr_stan.predict(X_stan)
-        title = 'Fitted against ture values'
+        title = 'Fitted against true values'
         ys = [[y, 'True'],[y_predicted, 'Fitted']]
         scatter(x_plt, ys, title=title)
     elif (option == 'iii'):
