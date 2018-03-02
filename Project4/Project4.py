@@ -239,7 +239,7 @@ def Q2a(option):
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
 
-def Q2b(option):
+def Q2b(option=None):
     X,y = getXy()
 
     if(option == 'i'):
@@ -306,8 +306,11 @@ def Q2b(option):
         make_plot(x_plt, ys_oob, title=title)
         return rmse_test, oob
     elif(option == 'iv'):
-        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
-            max_features=5, oob_score=True)
+        bestTree = 23
+        bestFeature = 3
+        bestDepth = 10
+        regr = RandomForestRegressor(n_estimators=bestTree, max_depth=bestDepth, bootstrap=True,
+            max_features=bestFeature, oob_score=True)
         rmse_test,rmse_train=cross_val(regr, X, y)
         regr.fit(X,y)
         importances = regr.feature_importances_
@@ -315,7 +318,7 @@ def Q2b(option):
         # Print the feature ranking
         print("Feature ranking:")
 
-        for f in range(X.shape[1]):
+        for f in range(X.shape[1]): 
             print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
 
         # Plot the feature importances of the forest
@@ -325,12 +328,23 @@ def Q2b(option):
         plt.xticks(range(X.shape[1]), indices)
         plt.show()
     elif(option == 'v'):
-        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
-            max_features=5, oob_score=True)
+        regr = RandomForestRegressor(n_estimators=23, max_depth=4, bootstrap=True,
+            max_features=3, oob_score=True)
         rmse_test,rmse_train=cross_val(regr, X, y)
         regr.fit(X,y)
         print('OOB Score is ', 1-regr.oob_score_)
         print('Feature importance ', regr.feature_importances_)
+        # save the classifier -- requires GraphViz and pydot
+        import io, pydot
+        from sklearn import tree
+        clf = regr.estimators_[0]
+        clf.fit(X,y)
+        dot_data = io.StringIO()
+        tree.export_graphviz(clf, out_file=dot_data)
+        graph = pydot.graph_from_dot_data(dot_data.getvalue())
+        graph[0].write_pdf("dtree.pdf")
+    
+
 
 
 
@@ -348,5 +362,5 @@ if __name__ == '__main__':
     #Q1('b')
     # Q2a('i')
     # Q2a('ii')
-    Q2b('iv')
+    Q2b()
     # Q2c()
