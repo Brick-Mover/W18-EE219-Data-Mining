@@ -252,8 +252,6 @@ def Q2a(option):
         y_test.append(rmse_test)
         y_train.append(rmse_train)
 
-
-
         for i in range(1,32):
             n = ([int(d) for d in str(bin(i))[2:]])
             m = [ 0 for i in range(5-len(n))]
@@ -272,11 +270,6 @@ def Q2a(option):
             lr = linear_model.LinearRegression()
             rmse_test, rmse_train = cross_val(lr, onehotlabels, y)
 
-            if rmse_test > 1:
-                rmse_test = 1
-            if rmse_train > 1:
-                rmse_train = 1
-
             y_test.append(rmse_test)
             y_train.append(rmse_train)
 
@@ -285,12 +278,12 @@ def Q2a(option):
         print (y_test)
         print (y_train)
         ys = []
-        ys = [[y_test, 'rmse_test'], [y_train, 'rmse_train']]
+        ys = [[y_test, 'RMSE_test'], [y_train, 'RMSE_train']]
 
-        xlabel = 'combination #'
-        ylabel = 'rmse'
-        title = 'test and train rmse for 32 combinations'
-        make_plot(xs, ys, scatter = True, xlabel=xlabel, ylabel=ylabel, grid=True, title=title, size_marker=40, marker='*')
+        xlabel = 'Combination #'
+        ylabel = 'RMSE'
+        title = 'Test and Train RMSE for 32 Combinations'
+        make_plot(xs, ys, scatter = True, xlabel=xlabel, ylabel=ylabel, grid=True, title=title, size_marker=40, marker='.')
 
 def Q2b(option=None):
     X,y = getXy()
@@ -428,6 +421,6 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    # Q2a('ii')
-    Q2b()
+    Q2a('iv')
+    # Q2b()
     # Q2c()
