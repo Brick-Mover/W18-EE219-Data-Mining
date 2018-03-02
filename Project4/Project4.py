@@ -165,10 +165,10 @@ def cross_val(clf, X, y):
 # 
 # ys is [[y, 'label'],...]
 # 
-def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=False, title=None):
+def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=False, title=None, size_marker = 1, marker = '.'):
     for y, label in ys:
         if scatter:
-            plt.scatter(x, y, s=1, marker='.', label=label)
+            plt.scatter(x, y, s=size_marker, marker=marker, label=label)
         else:
             plt.plot(x, y, label=label)
     if xlabel is not None:
@@ -235,10 +235,18 @@ def Q2a(option):
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
     elif (option == 'iv'):
+
+        y_test = []
+        y_train = []
+
         print ([False, False, False, False, False])
         X,y = getXy()
         lr = linear_model.LinearRegression()
-        cross_val(lr, X, y)
+        rmse_test, rmse_train = cross_val(lr, X, y)
+        y_test.append(rmse_test)
+        y_train.append(rmse_train)
+
+
 
         for i in range(1,32):
             n = ([int(d) for d in str(bin(i))[2:]])
@@ -251,20 +259,32 @@ def Q2a(option):
                     mask.append(True)
                 elif k==0:
                     mask.append(False)
-
-            print (mask)
-
             X,y = getXy()
             enc = OneHotEncoder(categorical_features=mask)
             enc.fit(X)
             onehotlabels = enc.transform(X).toarray()
-            print (onehotlabels.shape)
-            print (type(onehotlabels))
             lr = linear_model.LinearRegression()
-            cross_val(lr, onehotlabels, y)
-            print ('-----')
-        # plot
-        # cap big rmse to 1, explain in report 
+            rmse_test, rmse_train = cross_val(lr, onehotlabels, y)
+
+            if rmse_test > 1:
+                rmse_test = 1
+            if rmse_train > 1:
+                rmse_train = 1
+
+            y_test.append(rmse_test)
+            y_train.append(rmse_train)
+
+        xs = range(1,33)
+        print (xs)
+        print (y_test)
+        print (y_train)
+        ys = []
+        ys = [[y_test, 'rmse_test'], [y_train, 'rmse_train']]
+
+        xlabel = 'combination #'
+        ylabel = 'rmse'
+        title = 'test and train rmse for 32 combinations'
+        make_plot(xs, ys, scatter = True, xlabel=xlabel, ylabel=ylabel, grid=True, title=title, size_marker=40, marker='*')
 
 def Q2b(option):
     X,y = getXy()
