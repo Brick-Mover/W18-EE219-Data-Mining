@@ -1,3 +1,9 @@
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -154,10 +160,10 @@ def cross_val(clf, X, y):
 
     rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
     rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
-    print(sr_test.size, sr_train.size)
+    # print(rmse_test, rmse_train)
     # TODO: need to double check how to report test and train rmse. refer to Piazza
-    print ('test rmse: ', np.mean(rmse_test))
-    print ('train rmse: ', np.mean(rmse_train))
+    # print ('test rmse: ', np.mean(rmse_test))
+    # print ('train rmse: ', np.mean(rmse_train))
     return rmse_test, rmse_train
 
 # 
@@ -242,11 +248,12 @@ def Q2b(option):
         cross_val(regr, X, y)
         regr.fit(X,y)
         print('OOB Score is ', 1-regr.oob_score_)
+        print('Feature importance ', regr.feature_importances_)
     elif(option == 'ii'):
         oob = np.zeros([5,200])
         rmse_test = np.zeros([5,200])
-        for feat in range(0,5,3):
-            for tree in range(0,200,50):
+        for feat in range(0,5):
+            for tree in range(0,200):
                 regr = RandomForestRegressor(n_estimators=tree+1, max_depth=4, bootstrap=True,
                     max_features=feat+1, oob_score=True)
                 sub_rmse_test, _ = cross_val(regr, X, y)
@@ -254,7 +261,8 @@ def Q2b(option):
                 sub_oob = 1-regr.oob_score_
                 rmse_test[feat][tree] = sub_rmse_test
                 oob[feat][tree] = sub_oob
-                print('feature %s and tree num %s',(feat, tree))
+                if tree % 20 == 0:
+                    print('feature %s and tree num %s',(feat, tree))
 
         x_plt = [x for x in range(200)]
         ys_rmse = []
@@ -268,11 +276,12 @@ def Q2b(option):
             ys_oob.append([oob[i], 'max feature '+str(i)])
         title = 'Out of bag error against number of trees'
         make_plot(x_plt, ys_oob, title=title)
+        return rmse_test, oob
     elif(option == 'iii'):
         oob = np.zeros([5,200])
         rmse_test = np.zeros([5,200])
-        for feat in range(0,5,3):
-            for depth in range(0,200,50):
+        for feat in range(0,5):
+            for depth in range(0,200):
                 regr = RandomForestRegressor(n_estimators=20, max_depth=depth+1, bootstrap=True,
                     max_features=feat+1, oob_score=True)
                 sub_rmse_test, _ = cross_val(regr, X, y)
@@ -280,7 +289,8 @@ def Q2b(option):
                 sub_oob = 1-regr.oob_score_
                 rmse_test[feat][depth] = sub_rmse_test
                 oob[feat][depth] = sub_oob
-                print('max feature %s and max tree depth %s',(feat, depth))
+                if depth%20 == 0:
+                    print('max feature %s and max tree depth %s',(feat, depth))
 
         x_plt = [x for x in range(200)]
         ys_rmse = []
@@ -294,7 +304,8 @@ def Q2b(option):
             ys_oob.append([oob[i], 'max feature '+str(i)])
         title = 'Out of bag error against max depth of trees'
         make_plot(x_plt, ys_oob, title=title)
-
+        return rmse_test, oob
+    
 
 
 
@@ -313,3 +324,4 @@ if __name__ == '__main__':
     # Q2a('i')
     # Q2a('ii')
     Q2b('ii')
+    # Q2c()
