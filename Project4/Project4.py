@@ -343,7 +343,21 @@ def Q2b(option=None):
         tree.export_graphviz(clf, out_file=dot_data)
         graph = pydot.graph_from_dot_data(dot_data.getvalue())
         graph[0].write_pdf("dtree.pdf")
-    
+    else:
+        regr = RandomForestRegressor(n_estimators=23, max_depth=10, bootstrap=True,
+            max_features=3, oob_score=True)
+        regr.fit(X,y)
+        
+        y_pred = regr.predict(X)
+        x_plt = [x for x in range(len(y))]
+        title = 'Fitted against true values (Random Forest)'
+        ys = [[y, 'True'], [y_pred, 'Fitted']]
+        make_plot(x_plt, ys, scatter=True, title=title)
+
+        y_resd = y - y_pred
+        title = 'Residual against fitted values (Random Forest)'
+        ys = [[y_resd, 'Residual'], [y_pred, 'Fitted']]
+        make_plot(x_plt, ys, scatter=True, title=title)
 
 
 
