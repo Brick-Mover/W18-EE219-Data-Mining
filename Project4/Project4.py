@@ -235,19 +235,36 @@ def Q2a(option):
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
     elif (option == 'iv'):
-        # feature encoding 
+        print ([False, False, False, False, False])
         X,y = getXy()
-        enc = OneHotEncoder()
-        enc.fit(X)
-        onehotlabels = enc.transform(X).toarray()
-        print (onehotlabels.shape)
-        print (type(onehotlabels))
         lr = linear_model.LinearRegression()
-        cross_val(lr, onehotlabels, y)
+        cross_val(lr, X, y)
 
-        # 32 possibilities 
-    
+        for i in range(1,32):
+            n = ([int(d) for d in str(bin(i))[2:]])
+            m = [ 0 for i in range(5-len(n))]
+            m.extend(n)
+            mask = [] 
 
+            for k in m:
+                if k==1:
+                    mask.append(True)
+                elif k==0:
+                    mask.append(False)
+
+            print (mask)
+
+            X,y = getXy()
+            enc = OneHotEncoder(categorical_features=mask)
+            enc.fit(X)
+            onehotlabels = enc.transform(X).toarray()
+            print (onehotlabels.shape)
+            print (type(onehotlabels))
+            lr = linear_model.LinearRegression()
+            cross_val(lr, onehotlabels, y)
+            print ('-----')
+        # plot
+        # cap big rmse to 1, explain in report 
 
 def Q2b(option):
     X,y = getXy()
