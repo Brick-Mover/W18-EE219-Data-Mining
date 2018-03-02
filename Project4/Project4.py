@@ -305,7 +305,32 @@ def Q2b(option):
         title = 'Out of bag error against max depth of trees'
         make_plot(x_plt, ys_oob, title=title)
         return rmse_test, oob
-    
+    elif(option == 'iv'):
+        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
+            max_features=5, oob_score=True)
+        rmse_test,rmse_train=cross_val(regr, X, y)
+        regr.fit(X,y)
+        importances = regr.feature_importances_
+        indices = np.argsort(importances)[::-1]
+        # Print the feature ranking
+        print("Feature ranking:")
+
+        for f in range(X.shape[1]):
+            print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+        # Plot the feature importances of the forest
+        plt.figure()
+        plt.title("Feature importances")
+        plt.bar(range(X.shape[1]), importances[indices], align="center")
+        plt.xticks(range(X.shape[1]), indices)
+        plt.show()
+    elif(option == 'v'):
+        regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
+            max_features=5, oob_score=True)
+        rmse_test,rmse_train=cross_val(regr, X, y)
+        regr.fit(X,y)
+        print('OOB Score is ', 1-regr.oob_score_)
+        print('Feature importance ', regr.feature_importances_)
 
 
 
@@ -323,5 +348,5 @@ if __name__ == '__main__':
     #Q1('b')
     # Q2a('i')
     # Q2a('ii')
-    Q2b('ii')
+    Q2b('iv')
     # Q2c()
