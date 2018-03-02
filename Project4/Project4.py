@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_predict, KFold
 from sklearn import linear_model, cross_validation
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 from sklearn import feature_selection
@@ -11,6 +11,8 @@ from sklearn.feature_selection import VarianceThreshold, f_regression, mutual_in
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPClassifier
 import collections
+
+
 
 """
 CONSTANTS HERE
@@ -232,6 +234,20 @@ def Q2a(option):
 
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
+    elif (option == 'iv'):
+        # feature encoding 
+        X,y = getXy()
+        enc = OneHotEncoder()
+        enc.fit(X)
+        onehotlabels = enc.transform(X).toarray()
+        print (onehotlabels.shape)
+        print (type(onehotlabels))
+        lr = linear_model.LinearRegression()
+        cross_val(lr, onehotlabels, y)
+
+        # 32 possibilities 
+    
+
 
 def Q2b(option):
     X,y = getXy()
@@ -312,4 +328,4 @@ if __name__ == '__main__':
     #Q1('b')
     # Q2a('i')
     # Q2a('ii')
-    Q2b('ii')
+    Q2a('iv')
