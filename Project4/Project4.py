@@ -492,24 +492,18 @@ def Q2c():
             cross_val(nn, X, y)
 def Q2e():
     X, y = getXy()
-    num_n = range(1,101)
+    num_n = range(2,52,2)
+
     min_test = 999
     min_train = 999
     min_n = -1
-
-    # use one hot encoding 
-
-    mask = [True, True, True, True, True]
-    enc = OneHotEncoder(categorical_features=mask)
-    enc.fit(X)
-    onehotlabels = enc.transform(X).toarray()
 
     test_list = []
     train_list = []
 
     for n in num_n:
         clf = KNeighborsRegressor(n_neighbors = n)
-        rmse_test, rmse_train = cross_val (clf, onehotlabels, y, neighbor=True)
+        rmse_test, rmse_train = cross_val (clf, X, y, neighbor=True)
         if rmse_test < min_test:
             min_test = rmse_test 
             min_train = rmse_train
@@ -521,7 +515,7 @@ def Q2e():
     print (min_n)
 
     # plot test and train against num neighbor 
-    x_plt = [x for x in range(len(100))]
+    x_plt = num_n
     title = 'RMSE over number of neighbors'
     ys = [[test_list, 'test_RMSE'], [train_list, 'train_RMSE']]
     fig, ax = plt.subplots()
