@@ -493,6 +493,47 @@ def Q2c():
         for n in nHiddenUnits:
             nn = MLPClassifier((n,), activation=a)
             cross_val(nn, X, y)
+
+def Q2d(option):
+    # X[week #, day of week, hour of day, work flow, file id]
+    # group data by workflow
+    X,y=getXy()
+    Xy = np.concatenate((X,np.array([y]).T),axis=1)
+    group_by_workflow = {}
+    for x in Xy:
+        wf = x[3]
+        if wf not in group_by_workflow:
+            group_by_workflow[wf] = np.array([x])
+        else:
+            group_by_workflow[wf] = np.concatenate(
+            (group_by_workflow[wf], [x]),axis=0)
+    for key in group_by_workflow:
+#         print(key)
+        print(len(group_by_workflow[key]))  
+        Xy_wf = group_by_workflow[key]
+        X_wf = Xy_wf[:,:5]
+#         print(X_wf)
+        y_wf = Xy_wf[:,5]
+        
+        if option == 'i':
+            # RMSE (cross val) and plot
+            lr = linear_model.LinearRegression()
+            rmse_test, rmse_train = cross_val(lr, X_wf, y_wf)
+            print('For work flow %s, train rmse is %f and test rmse is %f' 
+                  % (key, rmse_train, rmse_test))
+            lr_all = linear_model.LinearRegression()
+            lr_all.fit(X_wf, y_wf)
+            y_pred = lr_all.predict(X_wf)
+            x_plt = [x for x in range(len(y_wf))]
+            title = 'Fitted against true values (LR wf '+str(key)+')'
+            ys = [[y_wf, 'True'], [y_pred, 'Fiited']]
+            make_plot(x_plt, ys, scatter=True, title=title)
+
+            y_resd = y_wf - y_pred
+            title = 'Residual against fitted values (LR wf '+str(key)+')'
+            ys = [[y_resd, 'Residual'], [y_pred, 'Fitted']]
+            make_plot(x_plt, ys, scatter=True, title=title)
+            
 def Q2e():
     X, y = getXy()
     num_n = range(1,101)
