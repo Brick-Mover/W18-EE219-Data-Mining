@@ -145,8 +145,8 @@ def getXy(useOnehot=False):
     return X,y
 
 
-def cross_val(clf, X, y, neighbor=False):
-    kf = KFold(n_splits=10)
+def cross_val(clf, X, y, neighbor=False, shuffle=False):
+    kf = KFold(n_splits=10, shuffle = shuffle)
 
     # squre root errors sr_test and sr_train
     sr_test = np.array([])
@@ -492,7 +492,7 @@ def Q2c():
             cross_val(nn, X, y)
 def Q2e():
     X, y = getXy()
-    num_n = range(2,52,2)
+    num_n = range(1,101)
 
     min_test = 999
     min_train = 999
@@ -503,7 +503,7 @@ def Q2e():
 
     for n in num_n:
         clf = KNeighborsRegressor(n_neighbors = n)
-        rmse_test, rmse_train = cross_val (clf, X, y, neighbor=True)
+        rmse_test, rmse_train = cross_val (clf, X, y, neighbor=True, shuffle=True)
         if rmse_test < min_test:
             min_test = rmse_test 
             min_train = rmse_train
