@@ -270,6 +270,12 @@ def Q2a(option):
         title = 'Fitted against true values'
         ys = [[y, 'True'],[y_predicted, 'Fitted']]
         make_plot(x_plt, ys, scatter=True, title=title)
+
+        # plot residual
+        y_residual = y - y_predicted
+        title = 'Residual against fitted values'
+        ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+        make_plot(x_plt, ys, scatter=True, title=title)
     elif (option == 'iii'):
         # f_regression and mutual info regression
         F, p = f_regression(X,y)
@@ -485,6 +491,6 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    # Q2a('iv')
+    Q2a('ii')
     # Q2b()
     # Q2c()
