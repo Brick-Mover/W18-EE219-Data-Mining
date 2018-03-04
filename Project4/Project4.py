@@ -510,16 +510,16 @@ def Q2e():
             min_n = n 
         test_list.append(rmse_test)
         train_list.append(rmse_train)
-    print (min_test)
-    print (min_train)
-    print (min_n)
+    print ('test RMSE',min_test)
+    print ('train_RMSE',min_train)
+    print ('best n_neighbor',min_n)
 
     # plot test and train against num neighbor 
     x_plt = num_n
     title = 'RMSE over number of neighbors'
     ys = [[test_list, 'test_RMSE'], [train_list, 'train_RMSE']]
     fig, ax = plt.subplots()
-    make_plot(x_plt, ys, scatter=False, title=title)
+    make_plot(x_plt, ys, xlabel = 'n_neighbors', ylabel = 'RMSE', scatter=False, title=title)
 
     # plot scatter
     clf = KNeighborsRegressor(n_neighbors = min_n)
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    # Q2a('ii')
+    # Q2a('iv')
     # Q2b()
     # Q2c()
-    Q2e()
+    # Q2e()
