@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_predict, KFold
 from sklearn import linear_model, cross_validation
+from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -190,6 +191,39 @@ def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=
         plt.title(title)
     plt.show()
 
+def find_best_combo(clf, hyper):
+    min_test = 999
+    min_combo = []
+    min_ar = 999 
+    for ar in hyper:
+        if (clf == 'Ridge'):
+            clf_ = Ridge(alpha = ar)
+        for i in range(1,32):
+            n = ([int(d) for d in str(bin(i))[2:]])
+            m = [ 0 for i in range(5-len(n))]
+            m.extend(n)
+            mask = [] 
+            for k in m:
+                if k==1:
+                    mask.append(True)
+                elif k==0:
+                    mask.append(False)
+            X,y = getXy()
+            enc = OneHotEncoder(categorical_features=mask)
+            enc.fit(X)
+            onehotlabels = enc.transform(X).toarray()
+            clf_used = clf_
+            rmse_test, rmse_train = cross_val(clf_used, onehotlabels, y)
+
+            if rmse_test < min_test:
+                min_test = rmse_test 
+                min_combo = mask 
+                min_ar = ar 
+    print ('regularizer used: ', clf)
+    print (min_test)
+    print (min_combo)
+    print (min_ar)
+    return min_test, min_combo, min_ar
 
 def Q2a(option):
     X,y = getXy()
@@ -241,7 +275,6 @@ def Q2a(option):
         lr_mi = linear_model.LinearRegression()
         cross_val(lr_mi, X_mi, y)
     elif (option == 'iv'):
-
         y_test = []
         y_train = []
 
@@ -284,6 +317,16 @@ def Q2a(option):
         ylabel = 'RMSE'
         title = 'Test and Train RMSE for 32 Combinations'
         make_plot(xs, ys, scatter = True, xlabel=xlabel, ylabel=ylabel, grid=True, title=title, size_marker=40, marker='.')
+    elif (option == 'v'):
+        clf_ridge = Ridge(alpha=1.0)
+        clf_lasso = Lasso(alpha=1.0)
+        clf_net = ElasticNet(alpha=1.0, l1_ratio=0.5)
+
+        alpha_ridge = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
+        
+        clf = 'Ridge'
+        hyper = alpha_ridge
+        find_best_combo(clf, hyper)
 
 def Q2b(option=None):
     X,y = getXy()
@@ -421,6 +464,6 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    Q2a('iv')
+    Q2a('v')
     # Q2b()
     # Q2c()
