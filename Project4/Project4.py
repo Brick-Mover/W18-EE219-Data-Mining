@@ -19,8 +19,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPClassifier
 import collections
 from sklearn.neighbors import KNeighborsRegressor
-
-
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import make_pipeline
 
 """
 CONSTANTS HERE
@@ -533,7 +534,23 @@ def Q2d(option):
             title = 'Residual against fitted values (LR wf '+str(key)+')'
             ys = [[y_resd, 'Residual'], [y_pred, 'Fitted']]
             make_plot(x_plt, ys, scatter=True, title=title)
-            
+
+        if option == 'ii':
+            rmse_test = np.array([])
+            rmse_train = np.array([])
+            deg_range = 10
+            for degree in range(deg_range):
+                if degree % 2 == 0:
+                    print(degree)
+                model = make_pipeline(PolynomialFeatures(degree), Ridge())
+                sub_rmse_test, sub_rmse_train = cross_val(model, X_wf, y_wf)
+                rmse_test = np.append(rmse_test, sub_rmse_test)
+                rmse_train = np.append(rmse_train, sub_rmse_train)
+            x_plt = [x for x in range(deg_range)]
+            title = 'RMSE againse degree of the polynomial (wf '+str(key)+')'
+            ys = [[rmse_test, 'RMSE Test'],[rmse_train, 'RMSE Train']]
+            make_plot(x_plt, ys, title=title)
+
 def Q2e():
     X, y = getXy()
     num_n = range(1,101)
