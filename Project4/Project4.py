@@ -193,6 +193,7 @@ def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=
 
 def find_best_combo(clf, hyper, ratio=[-1]):
     min_test = 999
+    min_train = 999 
     min_combo = []
     min_ar = 999 
     min_ra = 999 
@@ -228,16 +229,18 @@ def find_best_combo(clf, hyper, ratio=[-1]):
 
                 if rmse_test < min_test:
                     min_test = rmse_test 
+                    min_train = rmse_train
                     min_combo = mask 
                     min_ar = ar 
                     min_ra = ra 
                     min_coef = coef 
-    print ('regularizer used: ', clf)
-    print (min_test)
-    print (min_combo)
-    print (min_ar)
-    print (min_ra)
-    print (min_coef)
+    print ('Regularizer used: ', clf)
+    print ('Test RMSE: ',min_test)
+    print ('Train RMSE: ',min_train)
+    print ('Mask: ',min_combo)
+    print ('Best alpha: ', min_ar)
+    print ('Ratio for elastic net regularizer: ',min_ra)
+    print ('Coefficient for regression: ', min_coef)
     return min_test, min_combo, min_ar
 
 def Q2a(option):
@@ -542,7 +545,7 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    # Q2a('iv')
+    # Q2a('v')
     # Q2b()
     # Q2c()
     # Q2e()
