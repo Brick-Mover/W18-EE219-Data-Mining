@@ -18,6 +18,7 @@ from sklearn.feature_selection import VarianceThreshold, f_regression, mutual_in
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPClassifier
 import collections
+from sklearn.neighbors import KNeighborsRegressor
 
 
 
@@ -144,7 +145,7 @@ def getXy(useOnehot=False):
     return X,y
 
 
-def cross_val(clf, X, y):
+def cross_val(clf, X, y, neighbor=False):
     kf = KFold(n_splits=10)
 
     # squre root errors sr_test and sr_train
@@ -163,7 +164,10 @@ def cross_val(clf, X, y):
 
     rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
     rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
-    return rmse_test, rmse_train, clf.coef_
+    if neighbor == False:
+        return rmse_test, rmse_train, clf.coef_
+    else:
+        return rmse_test, rmse_train
 
 # 
 # ys is [[y, 'label'],...]
@@ -486,11 +490,65 @@ def Q2c():
         for n in nHiddenUnits:
             nn = MLPClassifier((n,), activation=a)
             cross_val(nn, X, y)
+def Q2e():
+    X, y = getXy()
+    num_n = range(1,101)
+    min_test = 999
+    min_train = 999
+    min_n = -1
+
+    # use one hot encoding 
+
+    mask = [True, True, True, True, True]
+    enc = OneHotEncoder(categorical_features=mask)
+    enc.fit(X)
+    onehotlabels = enc.transform(X).toarray()
+
+    test_list = []
+    train_list = []
+
+    for n in num_n:
+        clf = KNeighborsRegressor(n_neighbors = n)
+        rmse_test, rmse_train = cross_val (clf, onehotlabels, y, neighbor=True)
+        if rmse_test < min_test:
+            min_test = rmse_test 
+            min_train = rmse_train
+            min_n = n 
+        test_list.append(rmse_test)
+        train_list.append(rmse_train)
+    print (min_test)
+    print (min_train)
+    print (min_n)
+
+    # plot test and train against num neighbor 
+    x_plt = [x for x in range(len(100))]
+    title = 'RMSE over number of neighbors'
+    ys = [[test_list, 'test_RMSE'], [train_list, 'train_RMSE']]
+    fig, ax = plt.subplots()
+    make_plot(x_plt, ys, scatter=False, title=title)
+
+    # plot scatter
+    clf = KNeighborsRegressor(n_neighbors = min_n)
+    clf.fit(X, y)
+    y_predicted = clf.predict(X)
+    x_plt = [x for x in range(len(y))]
+    title = 'Fitted against true values'
+    ys = [[y, 'True'], [y_predicted, 'Fitted']]
+    fig, ax = plt.subplots()
+    make_plot(x_plt, ys, scatter=True, title=title)
+
+    # plot residual
+    y_residual = y - y_predicted
+    title = 'Residual against fitted values'
+    ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+    make_plot(x_plt, ys, scatter=True, title=title)
+
 
 if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    Q2a('ii')
+    # Q2a('ii')
     # Q2b()
     # Q2c()
+    Q2e()
