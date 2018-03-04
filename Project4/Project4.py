@@ -163,11 +163,7 @@ def cross_val(clf, X, y):
 
     rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
     rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
-    # print(rmse_test, rmse_train)
-    # TODO: need to double check how to report test and train rmse. refer to Piazza
-    # print ('test rmse: ', np.mean(rmse_test))
-    # print ('train rmse: ', np.mean(rmse_train))
-    return rmse_test, rmse_train
+    return rmse_test, rmse_train, clf.coef_
 
 # 
 # ys is [[y, 'label'],...]
@@ -191,38 +187,53 @@ def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, xticks=None, grid=
         plt.title(title)
     plt.show()
 
-def find_best_combo(clf, hyper):
+def find_best_combo(clf, hyper, ratio=[-1]):
     min_test = 999
     min_combo = []
     min_ar = 999 
-    for ar in hyper:
-        if (clf == 'Ridge'):
-            clf_ = Ridge(alpha = ar)
-        for i in range(1,32):
-            n = ([int(d) for d in str(bin(i))[2:]])
-            m = [ 0 for i in range(5-len(n))]
-            m.extend(n)
-            mask = [] 
-            for k in m:
-                if k==1:
-                    mask.append(True)
-                elif k==0:
-                    mask.append(False)
-            X,y = getXy()
-            enc = OneHotEncoder(categorical_features=mask)
-            enc.fit(X)
-            onehotlabels = enc.transform(X).toarray()
-            clf_used = clf_
-            rmse_test, rmse_train = cross_val(clf_used, onehotlabels, y)
+    min_ra = 999 
+    min_coef = [] 
+    if ratio == -1:
+        ratio_list = [1]
+    else:
+        ratio_list = ratio
+    for ra in ratio_list:
+        for ar in hyper:
+            if (clf == 'Ridge'):
+                clf_ = Ridge(alpha = ar)
+            elif (clf == 'Lasso'):
+                clf_ = Lasso(alpha = ar)
+            elif (clf == 'Net'):
+                clf_ = ElasticNet(alpha = ar, l1_ratio = ra)
+            for i in range(1,32):
+                n = ([int(d) for d in str(bin(i))[2:]])
+                m = [ 0 for i in range(5-len(n))]
+                m.extend(n)
+                mask = [] 
+                for k in m:
+                    if k==1:
+                        mask.append(True)
+                    elif k==0:
+                        mask.append(False)
+                X,y = getXy()
+                enc = OneHotEncoder(categorical_features=mask)
+                enc.fit(X)
+                onehotlabels = enc.transform(X).toarray()
+                clf_used = clf_
+                rmse_test, rmse_train, coef = cross_val(clf_used, onehotlabels, y)
 
-            if rmse_test < min_test:
-                min_test = rmse_test 
-                min_combo = mask 
-                min_ar = ar 
+                if rmse_test < min_test:
+                    min_test = rmse_test 
+                    min_combo = mask 
+                    min_ar = ar 
+                    min_ra = ra 
+                    min_coef = coef 
     print ('regularizer used: ', clf)
     print (min_test)
     print (min_combo)
     print (min_ar)
+    print (min_ra)
+    print (min_coef)
     return min_test, min_combo, min_ar
 
 def Q2a(option):
@@ -281,9 +292,13 @@ def Q2a(option):
         print ([False, False, False, False, False])
         X,y = getXy()
         lr = linear_model.LinearRegression()
-        rmse_test, rmse_train = cross_val(lr, X, y)
+        rmse_test, rmse_train, coef = cross_val(lr, X, y)
         y_test.append(rmse_test)
         y_train.append(rmse_train)
+
+        min_test = 999
+        min_combo = []
+        min_coef = []
 
         for i in range(1,32):
             n = ([int(d) for d in str(bin(i))[2:]])
@@ -301,15 +316,21 @@ def Q2a(option):
             enc.fit(X)
             onehotlabels = enc.transform(X).toarray()
             lr = linear_model.LinearRegression()
-            rmse_test, rmse_train = cross_val(lr, onehotlabels, y)
+            rmse_test, rmse_train, coef = cross_val(lr, onehotlabels, y)
 
             y_test.append(rmse_test)
             y_train.append(rmse_train)
+            if rmse_test < min_test:
+                min_test = rmse_test 
+                min_combo = mask 
+                min_coef = coef 
 
         xs = range(1,33)
         print (xs)
         print (y_test)
         print (y_train)
+        print (min_combo)
+        print (min_coef)
         ys = []
         ys = [[y_test, 'RMSE_test'], [y_train, 'RMSE_train']]
 
@@ -318,15 +339,15 @@ def Q2a(option):
         title = 'Test and Train RMSE for 32 Combinations'
         make_plot(xs, ys, scatter = True, xlabel=xlabel, ylabel=ylabel, grid=True, title=title, size_marker=40, marker='.')
     elif (option == 'v'):
-        clf_ridge = Ridge(alpha=1.0)
-        clf_lasso = Lasso(alpha=1.0)
-        clf_net = ElasticNet(alpha=1.0, l1_ratio=0.5)
-
-        alpha_ridge = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
-        
+        alpha_list = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
         clf = 'Ridge'
-        hyper = alpha_ridge
+        hyper = alpha_list
         find_best_combo(clf, hyper)
+        clf = 'Lasso'
+        find_best_combo(clf, hyper)
+        clf = 'Net'
+        ratio = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+        find_best_combo(clf, hyper, ratio)
 
 def Q2b(option=None):
     X,y = getXy()
@@ -464,6 +485,6 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    Q2a('v')
+    # Q2a('iv')
     # Q2b()
     # Q2c()
