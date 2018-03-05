@@ -16,7 +16,7 @@ from math import sqrt
 from sklearn import feature_selection
 from sklearn.feature_selection import VarianceThreshold, f_regression, mutual_info_regression, SelectKBest
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 import collections
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import PolynomialFeatures
@@ -118,12 +118,6 @@ def encode_day(days):
     return days
 
 
-def flatten(l):
-    for el in l:
-        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
-            yield from flatten(el)
-        else:
-            yield el
 
 
 def getXy(useOnehot=False):
@@ -144,6 +138,8 @@ def getXy(useOnehot=False):
         X = np.array(X)
     y = data_frame.iloc[:,5].values
     return X,y
+
+
 
 
 def cross_val(clf, X, y, neighbor=False, shuffle=False):
@@ -490,12 +486,50 @@ def Q2b(option=None):
 
 def Q2c():
     X, y = getXy(useOnehot=True)
+    y = y.astype('float16')
     activity = ['relu', 'logistic', 'tanh']
-    nHiddenUnits = range(50, 200, 5)
+    nHiddenUnits = range(10, 250, 5)
+    RMSE_test = { 'relu': [],
+                  'logistic': [],
+                  'tanh': []
+                }
+    RMSE_train = { 'relu': [],
+                   'logistic': [],
+                   'tanh': []
+                 }
+    # for a in activity:
     for a in activity:
         for n in nHiddenUnits:
-            nn = MLPClassifier((n,), activation=a)
-            cross_val(nn, X, y)
+            print(a, n)
+            nn = MLPRegressor((n,), activation=a)
+            rmse_test, rmse_train = cross_val(nn, X, y)
+            RMSE_test[a].append(rmse_test)
+            RMSE_train[a].append(rmse_train)
+    make_plot(nHiddenUnits, [[RMSE_test['relu'], 'test'], [RMSE_train['relu'], 'train']], 'relu RMSE vs number of hidden units', 'RMSE')
+    make_plot(nHiddenUnits, [[RMSE_test['logistic'], 'test'], [RMSE_train['logistic'], 'train']], 'logistic RMSE vs number of hidden units', 'RMSE')
+    make_plot(nHiddenUnits, [[RMSE_test['tanh'], 'test'], [RMSE_train['tanh'], 'train']], 'tanh RMSE vs number of hidden units', 'RMSE')
+    return RMSE_test, RMSE_train
+
+def Q2cPlot():
+    # plot scatter
+    X, y = getXy(useOnehot=True)
+    # nn = MLPRegressor((240,), activation='relu')
+    # nn = MLPRegressor((35,), activation='logistic')
+    nn = MLPRegressor((95,), activation='tanh')
+    nn.fit(X, y)
+    y_predicted = nn.predict(X)
+    x_plt = [x for x in range(len(y))]
+    title = 'Fitted against true values'
+    ys = [[y, 'True'], [y_predicted, 'Fitted']]
+    fig, ax = plt.subplots()
+    make_plot(x_plt, ys, scatter=True, title=title)
+
+    # plot residual
+    y_residual = y - y_predicted
+    title = 'Residual against fitted values'
+    ys = [[y_residual, 'Residual'], [y_predicted, 'Fitted']]
+    make_plot(x_plt, ys, scatter=True, title=title)
+
 
 def Q2d(option):
     # X[week #, day of week, hour of day, work flow, file id]
@@ -605,7 +639,7 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    Q2a('iii')
-    # Q2b('i')
-    # Q2c()
+    # Q2a('v')
+    # Q2b()
+    Q2cPlot()
     # Q2e()
