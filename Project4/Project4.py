@@ -165,7 +165,8 @@ def cross_val(clf, X, y, neighbor=False, shuffle=False):
 
     rmse_test = sqrt(np.sum(sr_test)/sr_test.size)
     rmse_train = sqrt(np.sum(sr_train)/sr_train.size)
-    if neighbor == False:
+    print('RMSE test %s and RMSE train %s' % (rmse_test, rmse_train))
+    if neighbor == True:
         return rmse_test, rmse_train, clf.coef_
     else:
         return rmse_test, rmse_train
@@ -369,7 +370,8 @@ def Q2b(option=None):
     if(option == 'i'):
         regr = RandomForestRegressor(n_estimators=20, max_depth=4, bootstrap=True,
             max_features=5, oob_score=True)
-        cross_val(regr, X, y)
+        test,train=cross_val(regr, X, y)
+        print(test,train)
         regr.fit(X,y)
         print('OOB Score is ', 1-regr.oob_score_)
         print('Feature importance ', regr.feature_importances_)
@@ -603,7 +605,7 @@ if __name__ == '__main__':
     #Q1('a')
     #Q1('b')
     # Q2a('i')
-    # Q2a('v')
-    # Q2b()
+    Q2a('iii')
+    # Q2b('i')
     # Q2c()
     # Q2e()
