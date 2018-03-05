@@ -292,6 +292,24 @@ def Q2a(option):
         X_mi = SelectKBest(mutual_info_regression, k=3).fit_transform(X,y)
 
         lr_reg = linear_model.LinearRegression()
+        lr_reg.fit(X,y)
+        y_predicted = lr_reg.predict(X)
+        title = 'Fitted against true values'
+        ys = [[y, 'True'],[y_predicted, 'Fitted']]
+        make_plot(x_plt, ys, scatter=True, title=title)
+
+        # plot residual
+        y_residual = y - y_predicted
+        title = 'Residual against fitted values'
+        ys = [[y_residual, 'Residual'],[y_predicted, 'Fitted']]
+        make_plot(x_plt, ys, scatter=True, title=title)
+
+
+
+        lr_mi = linear_model.LinearRegression()
+
+
+        lr_reg = linear_model.LinearRegression()
         cross_val(lr_reg, X_reg, y)
 
         lr_mi = linear_model.LinearRegression()
@@ -468,6 +486,8 @@ def Q2b(option=None):
     else:
         regr = RandomForestRegressor(n_estimators=23, max_depth=10, bootstrap=True,
             max_features=3, oob_score=True)
+        test, train = cross_val(regr, X,y)
+        print(test, train)
         regr.fit(X,y)
         
         y_pred = regr.predict(X)
@@ -558,6 +578,7 @@ def Q2d(option):
             rmse_test, rmse_train = cross_val(lr, X_wf, y_wf)
             print('For work flow %s, train rmse is %f and test rmse is %f' 
                   % (key, rmse_train, rmse_test))
+            
             lr_all = linear_model.LinearRegression()
             lr_all.fit(X_wf, y_wf)
             y_pred = lr_all.predict(X_wf)
@@ -640,6 +661,7 @@ if __name__ == '__main__':
     #Q1('b')
     # Q2a('i')
     # Q2a('v')
+    Q2b()
     # Q2b()
-    Q2cPlot()
+    # Q2cPlot()
     # Q2e()
