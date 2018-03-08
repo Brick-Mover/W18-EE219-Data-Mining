@@ -2,6 +2,7 @@ import json
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+import statsmodels.api as stats_api 
 
 
 
@@ -70,7 +71,55 @@ def Q1_1_plot(category):
     plt.ylabel('Number of tweets')
     plt.show()
 
+def Q1_2():
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    for category in hashtags: 
+        with open(fileLocation(category), encoding="utf8") as f:
+            tweets = f.readlines()
+            firstTs = json.loads(tweets[0])['firstpost_date']
+            firstTs = firstTs // 3600 * 3600
+            lastTs = json.loads(tweets[-1])['firstpost_date']
+            # total hour 
+            totalHours = tsDiffHour(firstTs, lastTs) + 1
+
+            hourCount = [0] * totalHours
+            followerCount = [0] * totalHours
+            retweetCount = [0] * totalHours
+            tweetCount = [0] * totalHours
+            max_followers = [0] * totalHours
+
+            users = set()
+            for tweet in tweets:
+                t = json.loads(tweet)
+                ts = t['firstpost_date']
+                # count hour
+                hourDiff = tsDiffHour(firstTs, ts)
+                hourCount[hourDiff] += 1
+                # count follower
+                if t['tweet']['user']['id'] not in users:
+                    users.add(t['tweet']['user']['id'])
+                    followerCount[hourDiff] += t['author']['followers']
+                # count retweets
+                retweetCount[hourDiff] += t['metrics']['citations']['total']
+                tweetCount [hourDiff] += 1
+                max_followers [hourDiff] = max(max_followers [hourDiff], t['author']['followers'])
+
+            time_of_day = [0] * totalHours
+            i = 0
+            while i < totalHours -1:
+                time_of_day [i] = i %24
+                i += 1
+
+            dataset = np.array( [tweetCount, retweetCount, followerCount, max_followers, time_of_day])
+            dataset = dataset.transpose()
+            y = dataset [1:,0]
+            X = dataset [:-1, 0:5]
+            
+            result = stats_api.OLS(y,X).fit()
+            print (result.summary())
+            print ('=============================')
 
 if __name__ == '__main__':
-    Q1_1('#patriots')
+    #Q1_1('#patriots')
     #Q1_1_plot('#gohawks')
+    Q1_2()
