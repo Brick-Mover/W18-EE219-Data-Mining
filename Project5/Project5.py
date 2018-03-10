@@ -79,7 +79,7 @@ def Q1_1(category):
         hourCount = [0] * totalHours
         followerCount = 0
         retweetCount = 0
-        users = set()
+
         for tweet in tweets:
             t = json.loads(tweet)
             ts = t['firstpost_date']
@@ -87,18 +87,15 @@ def Q1_1(category):
             hourDiff = tsDiffHour(firstTs, ts)
             hourCount[hourDiff] += 1
             # count follower
-            if t['tweet']['user']['id'] not in users:
-                users.add(t['tweet']['user']['id'])
-                followerCount += t['author']['followers']
+            followerCount += t['author']['followers']
             # count retweets
             retweetCount += t['metrics']['citations']['total']
-
 
         save_obj(category + '_numTweetsInHour', hourCount)
         # report average number of tweets per hour
         print(category + ': ' + 'Average number of tweets per hour: ' + str(np.mean(hourCount)))
         print(category + ': ' + 'Average number of followers of users posting the tweets: ' +
-              str(followerCount / len(users)))
+              str(followerCount / len(tweets)))
         print(category + ': ' + 'Average number of retweets: ' + str(retweetCount / len(tweets)))
 
 
@@ -172,4 +169,10 @@ def Q1_4():
 
 
 if __name__ == '__main__':
-    extractFirstTsAndLastTs()
+    # hashtags = ['#gohawks', '#sb49', '#gopatriots', '#patriots', "#superbowl", "#nfl"]
+    # for cate in hashtags:
+    #     Q1_1(cate)
+    # Q1_1("#superbowl")
+    Q1_1_plot("#superbowl")
+    # Q1_1("#nfl")
+    Q1_1_plot("#nfl")
