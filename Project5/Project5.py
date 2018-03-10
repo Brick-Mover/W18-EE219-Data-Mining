@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as stats_api 
 from sklearn.svm import SVR
+from datetime import date
 
 
 FIRST_TS = {
@@ -159,6 +160,58 @@ def Q1_2():
             print (result.summary())
             print ('=============================')
 
+# 
+# for function days_of_account
+# 
+month_num = {
+    'Jan': 1,
+    'Feb': 2,
+    'Mar': 3,
+    'Apr': 4,
+    'May': 5,
+    'Jun': 6,
+    'Jul': 7,
+    'Aug': 8,
+    'Sep': 9,
+    'Oct': 10,
+    'Nov': 11,
+    'Dec': 12
+}
+
+def days_of_account(t):
+    account_date = t['tweet']['user']['created_at'].split(' ')
+    post_date = t['tweet']['created_at'].split(' ')
+    d_account = date(int(account_date[5]), month_num[account_date[1]],
+                     int(account_date[2]))
+    d_post = date(int(post_date[5]), month_num[post_date[1]],
+                     int(post_date[2]))
+    return (d_post-d_account).days
+
+# 
+# feat = 'retweet', 'follower', 'mention' (for mention count sum), 
+# 'rank_score', 'passitivity' (rareness, as defined in report, for sum),
+# and 'tags' (for sum)
+# 
+def get_feature(tweet, feat):
+    if feat == 'retweet':
+        return tweet['metrics']['citations']['total']
+    elif feat == 'follower':
+        return tweet['author']['followers']
+    elif feat == 'mention':
+        return len(tweet['tweet']['entities']['user_mentions'])
+    elif feat == 'rank_score':
+        return tweet['metrics']['ranking_score']
+    elif feat == 'passitivity':
+        days_account = days_of_account(tweet)
+        followers = tweet['tweet']['user']['followers_count']
+        res = days_account/(1.0+followers)
+        return res
+    elif feat == 'tags':
+        res = len(tweet['tweet']['entities']['hashtags'])
+        return res
+
+def Q1_3():
+    return 0
 
 def Q1_4():
     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
@@ -172,4 +225,5 @@ def Q1_4():
 
 
 if __name__ == '__main__':
-    extractFirstTsAndLastTs()
+    # extractFirstTsAndLastTs()
+    Q1_3()
