@@ -3,7 +3,26 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as stats_api 
+from sklearn.svm import SVR
 
+
+FIRST_TS = {
+    "#gohawks": 1421222681,
+    "#nfl": 1421222404,
+    "#sb49": 1421238675,
+    "#gopatriots": 1421229011,
+    "#patriots": 1421222838,
+    "#superbowl": 1421223187
+}
+
+LAST_TS = {
+    "#gohawks": 1423304269,
+    "#nfl": 1423335336,
+    "#sb49": 1423335336,
+    "#gopatriots": 1423295675,
+    "#patriots": 1423335300,
+    "#superbowl": 1423332008
+}
 
 
 def fileLocation(category):
@@ -20,21 +39,41 @@ def load_obj(name):
         return pickle.load(f)
 
 
-"""
-startTs: the rounded(down) timestamp of the first tweet
-endTs: the raw timestamp of a tweet
-return: the hour difference between startTs and endTs(0 -> ...)
-"""
 def tsDiffHour(startTs:int, endTs:int) -> int:
+    """
+    startTs: the rounded(down) timestamp of the first tweet
+    endTs: the raw timestamp of a tweet
+    :return: the hour difference between startTs and endTs(0 -> ...)
+    """
     return (endTs // 3600 * 3600 - startTs) // 3600
+
+
+def extractFirstTsAndLastTs():
+    """
+    This function is only called once to extract the first timestamp of each category.
+    Included for the completeness of code submission.
+    """
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    for category in hashtags:
+        with open(fileLocation(category), encoding="utf8") as f:
+            tweets = f.readlines()
+            firstTs = json.loads(tweets[0])['citation_date']
+            lastTs = firstTs
+            for t in tweets:
+                t = json.loads(t)
+                if t['citation_date'] < firstTs:
+                    firstTs = t['citation_date']
+                if t['citation_date'] > lastTs:
+                    lastTs = t['citation_date']
+            print(category, firstTs, lastTs)
 
 
 def Q1_1(category):
     with open(fileLocation(category), encoding="utf8") as f:
         tweets = f.readlines()
-        firstTs = json.loads(tweets[0])['firstpost_date']
+        firstTs = FIRST_TS[category]
         firstTs = firstTs // 3600 * 3600
-        lastTs = json.loads(tweets[-1])['firstpost_date']
+        lastTs = LAST_TS[category]
         totalHours = tsDiffHour(firstTs, lastTs) + 1
 
         hourCount = [0] * totalHours
@@ -70,6 +109,7 @@ def Q1_1_plot(category):
     plt.xlabel('hours')
     plt.ylabel('Number of tweets')
     plt.show()
+
 
 def Q1_2():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
@@ -119,7 +159,17 @@ def Q1_2():
             print (result.summary())
             print ('=============================')
 
+
+def Q1_4():
+    svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
+    svr_lin = SVR(kernel='linear', C=1e3)
+    svr_poly = SVR(kernel='poly', C=1e3, degree=2)
+    y_rbf = svr_rbf.fit(X, y).predict(X)
+    y_lin = svr_lin.fit(X, y).predict(X)
+    y_poly = svr_poly.fit(X, y).predict(X)
+
+
+
+
 if __name__ == '__main__':
-    #Q1_1('#patriots')
-    #Q1_1_plot('#gohawks')
-    Q1_2()
+    extractFirstTsAndLastTs()
