@@ -341,9 +341,10 @@ def Q1_4():
             X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:, :]
             y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:]
 
+            print(X1.shape, X2.shape, X3.shape)
             # svr_rbf = SVR(kernel='rbf', gamma=0.1, C=0.1)
             # svr_lin = SVR(kernel='linear', C=0.1)
-            svr_poly = SVR(kernel='poly', degree=2, C=1)
+            svr_poly = SVR(kernel='poly', degree=2, C=1, cache_size=7000)
 
             # score1_1 = cross_val_score(svr_rbf, X=X1, y=y1, scoring=scorer, cv=10)
             # score1_2 = cross_val_score(svr_rbf, X=X2, y=y2, scoring=scorer, cv=10)
@@ -353,13 +354,10 @@ def Q1_4():
             # score2_2 = cross_val_score(svr_lin, X=X2, y=y2, scoring=scorer, cv=10)
             # score2_3 = cross_val_score(svr_lin, X=X3, y=y3, scoring=scorer, cv=10)
 
-            score3_1 = cross_val_score(svr_poly, X=X1, y=y1, scoring=scorer, cv=10)
-            score3_2 = cross_val_score(svr_poly, X=X2, y=y2, scoring=scorer, cv=10)
-            score3_3 = cross_val_score(svr_poly, X=X3, y=y3, scoring=scorer, cv=10)
 
             # print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
             # print(np.mean(score2_1), np.mean(score2_2), np.mean(score2_3), '\n')
-            print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
+            # print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
             #
             # print(score1_1, np.mean(score1_1))
             # print(score1_2, np.mean(score1_2))
