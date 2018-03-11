@@ -223,7 +223,7 @@ def createQ2Data():
     svd = TruncatedSVD(n_components=50)
     X = svd.fit_transform(TFidf.fit_transform(text_data))
 
-    save_obj('text_data_Q2', text_data)
+    # save_obj('text_data_Q2', text_data)
     save_obj('label_Q2', loc)
     save_obj('X_Q2', X)
 
