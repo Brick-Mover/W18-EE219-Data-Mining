@@ -256,7 +256,27 @@ def createData():
             X = np.array([mentionCount, rankScore, passitivity, tags, author])
             X = X.transpose()
             save_obj(tag + '_Q13', X)
-            
+
+def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, 
+              xticks=None, grid=False, title=None, 
+              size_marker = 20, marker = '.'):
+    for y, label in ys:
+        if scatter:
+            plt.scatter(x, y, s=size_marker, marker=marker, label=label)
+        else:
+            plt.plot(x, y, label=label)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+    if xticks is not None:
+        plt.xticks(x)
+    plt.legend()
+    if grid == True:
+        plt.grid()
+    if title is not None:
+        plt.title(title)
+    plt.show() 
 
 def Q1_3():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
@@ -273,7 +293,22 @@ def Q1_3():
     #     print(sum_err)
         rmse = sqrt(sum_err/len(y_resid))
         print('%s has RMSE of %.3f' % (tag, rmse))
+
+        features = ['mentionCount','rankScore', 'passitivity', 
+                'co-occurrence_of_tags', 'unique_author']
+        for i in [0,2,3]:
+            x_plt = X[:, i]
+            ys = [[y, 'Predictant']]
+            x_label = features[i]
+            y_label = 'number of tweets for next hour'
+            title = tag+', '+x_label
+            make_plot(x_plt, ys, scatter=True, xlabel=x_label,
+                     ylabel=y_label, title=title)
         print ('=============================')
+
+    # after reading the p value of 5 features and majority votes,
+    # we find that x1 (mentionCount), x3 (passitivity) and x4 
+    # (tags) are most significant features
 
 def Q1_4():
     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
