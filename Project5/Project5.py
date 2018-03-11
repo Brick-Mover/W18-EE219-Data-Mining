@@ -5,7 +5,7 @@ import numpy as np
 import statsmodels.api as stats_api 
 from sklearn.svm import SVR
 from datetime import date
-
+import math
 
 FIRST_TS = {
     "#gohawks": 1421222681,
@@ -187,7 +187,7 @@ def days_of_account(t):
 # 
 # feat = 'retweet', 'follower', 'mention' (for mention count sum), 
 # 'rank_score', 'passitivity' (rareness, as defined in report, for sum),
-# and 'tags' (for sum)
+# and 'tags' (for sum), 'author' (for unique author count)
 # 
 def get_feature(tweet, feat):
     if feat == 'retweet':
@@ -206,9 +206,64 @@ def get_feature(tweet, feat):
     elif feat == 'tags':
         res = len(tweet['tweet']['entities']['hashtags'])
         return res
+    elif feat == 'author':
+        return tweet['author']['name']
+
+# 
+# create X (new features) for Q1_3
+# 
+def createData():
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    for tag in hashtags:
+        with open(fileLocation(tag), encoding="utf8") as f:
+            tweets = f.readlines()
+            firstTs = FIRST_TS[tag]
+            firstTs = firstTs // 3600 * 3600
+            lastTs = LAST_TS[tag]
+            totalHours = tsDiffHour(firstTs, lastTs) + 1
+
+            mentionCount = [0] * totalHours
+            rankScore = [0] * totalHours
+            passitivity = [0] * totalHours
+            tags = [0] * totalHours
+            author = [0] * totalHours
+            uniq_author = {}
+
+            for tweet in tweets:
+                t = json.loads(tweet)
+                ts = t['citation_date']
+                hourDiff = tsDiffHour(firstTs, ts)
+                
+                mentionCount[hourDiff] += get_feature(t, 'mention')
+                rankScore[hourDiff] += get_feature(t, 'rank_score')
+                passitivity[hourDiff] += get_feature(t, 'passitivity')
+                tags[hourDiff] += get_feature(t, 'tags')
+                aut = get_feature(t, 'author')
+                if aut not in uniq_author:
+                    uniq_author[aut] = len(uniq_author)
+                    author[hourDiff] += 1
+            
+            X = np.array([mentionCount, rankScore, passitivity, tags, author])
+            X = X.transpose()
+            save_obj(tag + '_Q13', X)
+            
 
 def Q1_3():
-    return 0
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    for tag in hashtags:
+        X = load_obj(tag+'_Q13')[:-1,:4]
+        y = load_obj(tag+'_numTweetsInHour')[1:]
+        model = stats_api.OLS(y,X)
+        res = model.fit()
+        y_pred = res.predict(X)
+        y_resid = y-y_pred
+        sum_err = pow(y_resid,2)
+        sum_err = np.sum(sum_err)
+        print(res.summary())
+    #     print(sum_err)
+        rmse = math.sqrt(sum_err/len(y_resid))
+        print('%s has RMSE of %.3f' % (tag, rmse))
+        print ('=============================')
 
 def Q1_4():
     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
@@ -226,6 +281,7 @@ if __name__ == '__main__':
     # for cate in hashtags:
     #     Q1_1(cate)
     # Q1_1("#superbowl")
-    Q1_1_plot("#superbowl")
+    # Q1_1_plot("#superbowl")
     # Q1_1("#nfl")
-    Q1_1_plot("#nfl")
+    # Q1_1_plot("#nfl")
+    Q1_3()
