@@ -4,6 +4,15 @@ import re
 import numpy as np
 from datetime import date
 import matplotlib.pyplot as plt
+from nltk.stem.snowball import SnowballStemmer
+from nltk.tokenize import RegexpTokenizer
+import nltk
+from sklearn.model_selection import cross_val_predict, KFold
+from sklearn.metrics import accuracy_score, recall_score, precision_score
+import itertools
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
+from sklearn.decomposition import TruncatedSVD
 
 def fileLocation(category):
     return 'tweet_data/tweets_%s.txt' % category
@@ -169,6 +178,22 @@ def match(l):
         return 1
     return -1
 
+class mytokenizer(object):
+    def __init__(self):
+        self.stemmer = SnowballStemmer("english", ignore_stopwords=True)
+        self.tokenizer = RegexpTokenizer(r'\w+')
+
+    def __call__(self, text):
+        tokens = re.sub(r'[^A-Za-z]', " ", text)
+        tokens = re.sub("[,.-:/()?{}*$#&]"," ",tokens)
+        tokens =[word for tk in nltk.sent_tokenize(tokens) for word in nltk.word_tokenize(tk)]
+        new_tokens = []
+        for token in tokens:
+            if re.search('[a-zA-Z]{2,}', token):
+                new_tokens.append(token)     
+        stems = [self.stemmer.stem(t) for t in new_tokens]
+        return stems
+
 def createQ2Data():
     loc = np.array([]) #y
     text_data = np.array([]) #X
@@ -192,5 +217,118 @@ def createQ2Data():
                 loc = np.append(loc, mat_res)
                 text_data = np.append(text_data, text)
 
+    TFidf = TfidfVectorizer(analyzer='word',tokenizer=mytokenizer(), 
+                            stop_words=ENGLISH_STOP_WORDS, 
+                            norm = 'l2', max_df=0.9, min_df=2)
+    svd = TruncatedSVD(n_components=50)
+    X = svd.fit_transform(TFidf.fit_transform(text_data))
+
     save_obj('text_data_Q2', text_data)
     save_obj('label_Q2', loc)
+    save_obj('X_Q2', X)
+
+
+
+def plot_confusion_matrix(label_true, label_pred, classname, normalize=False, title='Confusion Matrix'):
+    plt.figure()
+    cmat = confusion_matrix(label_true, label_pred)
+    cmap = plt.cm.Blues
+    plt.imshow(cmat, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    tick_marks = np.arange(len(classname))
+    plt.xticks(tick_marks, classname, rotation=45)
+    plt.yticks(tick_marks, classname)
+
+    if normalize:
+        cmat = cmat.astype('float') / cmat.sum(axis=1)[:, np.newaxis]
+
+    # print(cmat)
+
+    thresh = cmat.max() / 2.
+    for i, j in itertools.product(range(cmat.shape[0]), range(cmat.shape[1])):
+        if normalize == False:
+            plt.text(j, i, cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+        else:
+            plt.text(j, i, "%.2f"%cmat[i, j], horizontalalignment="center", color="white" if cmat[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
+
+# 
+# if score is true, return y_score for usage in plot of ROC
+# ! Only set score to True if the classifier has function predict_proba!!!
+# 
+def cross_val(clf, X, y, shuffle=False, score=False, verbose=False):
+    kf = KFold(n_splits=10, shuffle = shuffle)
+
+    y_true_train = np.array([])
+    y_pred_train = np.array([])
+    y_true_test = np.array([])
+    y_pred_test = np.array([])
+    if score == True:
+        y_score_train = np.array([])
+        y_score_test = np.array([])
+    X = np.array(X)
+    y = np.array(y)
+    epoch = 1
+    for train_index, test_index in kf.split(X):
+        if verbose:
+            print('epoch', epoch)
+        epoch += 1
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        clf.fit(X_train, y_train)
+        sub_y_pred_test = clf.predict(X_test)
+        sub_y_pred_train = clf.predict(X_train)
+
+        y_true_test = np.append(y_true_test, y_test)
+        y_true_train = np.append(y_true_train, y_train)
+        y_pred_test = np.append(y_pred_test, sub_y_pred_test)
+        y_pred_train = np.append(y_pred_train, sub_y_pred_train)
+
+        if score == True:
+            sub_y_score_train = clf.predict_proba(X_train)
+            sub_y_score_test = clf.predict_proba(X_test)
+            y_score_train = np.append(y_score_train, sub_y_score_train)
+            y_score_test = np.append(y_score_test, sub_y_score_test)
+
+    if score == True:
+        return y_true_train, y_pred_train, y_true_test, y_pred_test, y_score_train, y_score_test
+    else:
+        return y_true_train, y_pred_train, y_true_test, y_pred_test
+
+# 
+# calculate accuracy score and f1 score
+# 
+def metrics(y_true, y_pred):
+    acc = accuracy_score(y_true, y_pred)
+    rec = recall_score(y_true, y_pred)
+    prec = precision_score(y_true, y_pred)
+    return acc, rec, prec
+
+# 
+# return area under curve
+# 
+def plot_ROC(yTrue, yScore, title='ROC Curve', rang=4, no_score=False):
+    # pay attention here
+    yScore = yScore.reshape(len(yTrue), 2)
+    yScore = yScore[:,1]
+    fpr, tpr, _ = roc_curve(yTrue, yScore)
+    roc_auc = auc(fpr, tpr)
+    lw=2
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(title)
+    plt.legend(loc="lower right")
+    plt.show()
+    plt.close()
+
+    return roc_auc

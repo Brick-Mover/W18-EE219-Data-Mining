@@ -11,8 +11,10 @@ import numpy as np
 from math import sqrt
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer
+from sklearn.ensemble import RandomForestClassifier
 from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
-get_feature, createData, make_plot, createQ2Data
+get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
+metrics, plot_ROC
 
 FIRST_TS = {
     "#gohawks": 1421222681,
@@ -213,10 +215,27 @@ def Q1_4():
 
 
 def Q2():
-    text_data = load_obj('text_data_Q2')
+    X = load_obj('X_Q2')
     y = load_obj('label_Q2')
-    print(text_data.size, y.size)
+
+    clf = RandomForestClassifier(max_features=50,random_state=20)
+
+    y_t_train, y_p_train, y_t_test, y_p_test, y_score_train, y_score_test \
+        = cross_val(clf, X, y, shuffle=True, score=True, verbose=True)
+
+    acc_test, rec_test, prec_test = metrics(y_t_test, y_p_test)
+    acc_train, rec_train, prec_train = metrics(y_t_train, y_p_train)
+    print('Test accuracy %0.4f, recall score %0.4f and precision score %.4f'
+          % (acc_test, rec_test, prec_test))
+    print('Train accuracy %0.4f, recall score %0.4f and precision score %.4f'
+          % (acc_train, rec_train, prec_train))
+
+    classnames = ['Washington', 'Massachusetts']
+
+    plot_confusion_matrix(y_t_test, y_p_test, classnames)
+
+    auc = plot_ROC(y_t_test, y_score_test)
 
 if __name__ == '__main__':
-    Q1_2()
+    Q2()
 
