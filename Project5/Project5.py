@@ -261,7 +261,7 @@ def createData():
 def Q1_3():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
     for tag in hashtags:
-        X = load_obj(tag+'_Q13')[:-1,:4]
+        X = load_obj(tag+'_Q13')[:-1,:]
         y = load_obj(tag+'_numTweetsInHour')[1:]
         model = stats_api.OLS(y,X)
         res = model.fit()
