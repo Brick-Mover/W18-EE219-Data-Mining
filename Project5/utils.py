@@ -14,6 +14,24 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
 from sklearn.decomposition import TruncatedSVD
 
+FIRST_TS = {
+    "#gohawks": 1421222681,
+    "#nfl": 1421222404,
+    "#sb49": 1421238675,
+    "#gopatriots": 1421229011,
+    "#patriots": 1421222838,
+    "#superbowl": 1421223187
+}
+
+LAST_TS = {
+    "#gohawks": 1423304269,
+    "#nfl": 1423335336,
+    "#sb49": 1423335336,
+    "#gopatriots": 1423295675,
+    "#patriots": 1423335300,
+    "#superbowl": 1423332008
+}
+
 def fileLocation(category):
     return 'tweet_data/tweets_%s.txt' % category
 

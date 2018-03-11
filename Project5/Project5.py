@@ -14,27 +14,9 @@ from sklearn.metrics import make_scorer
 from sklearn.ensemble import RandomForestClassifier
 from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
-metrics, plot_ROC
+metrics, plot_ROC, FIRST_TS, LAST_TS
 from sklearn.ensemble import RandomForestRegressor
 
-
-FIRST_TS = {
-    "#gohawks": 1421222681,
-    "#nfl": 1421222404,
-    "#sb49": 1421238675,
-    "#gopatriots": 1421229011,
-    "#patriots": 1421222838,
-    "#superbowl": 1421223187
-}
-
-LAST_TS = {
-    "#gohawks": 1423304269,
-    "#nfl": 1423335336,
-    "#sb49": 1423335336,
-    "#gopatriots": 1423295675,
-    "#patriots": 1423335300,
-    "#superbowl": 1423332008
-}
 
 PERIOD1 = 1422806400    # PST: 2015 Feb. 1, 8:00 a.m.
 PERIOD2 = 1422849600    # PST: 2015 Feb. 1, 8:00 p.m.
@@ -242,5 +224,5 @@ def Q2():
     auc = plot_ROC(y_t_test, y_score_test)
 
 if __name__ == '__main__':
-    Q2()
+    Q1_2()
 
