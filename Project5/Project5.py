@@ -12,6 +12,9 @@ import statsmodels.api as stats_api
 from sklearn.svm import SVR
 from datetime import date
 from math import sqrt
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import make_scorer
+
 
 FIRST_TS = {
     "#gohawks": 1421222681,
@@ -30,6 +33,10 @@ LAST_TS = {
     "#patriots": 1423335300,
     "#superbowl": 1423332008
 }
+
+PERIOD1 = 1422806400    # PST: 2015 Feb. 1, 8:00 a.m.
+PERIOD2 = 1422849600    # PST: 2015 Feb. 1, 8:00 p.m.
+
 
 
 def fileLocation(category):
@@ -219,6 +226,7 @@ def get_feature(tweet, feat):
     elif feat == 'author':
         return tweet['author']['name']
 
+
 # 
 # create X (new features) for Q1_3
 # 
@@ -257,6 +265,7 @@ def createData():
             X = X.transpose()
             save_obj(tag + '_Q13', X)
 
+
 def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, 
               xticks=None, grid=False, title=None, 
               size_marker = 20, marker = '.'):
@@ -277,6 +286,7 @@ def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None,
     if title is not None:
         plt.title(title)
     plt.show() 
+
 
 def Q1_3():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
@@ -310,24 +320,59 @@ def Q1_3():
     # we find that x1 (mentionCount), x3 (passitivity) and x4 
     # (tags) are most significant features
 
+
 def Q1_4():
-    svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
-    svr_lin = SVR(kernel='linear', C=1e3)
-    svr_poly = SVR(kernel='poly', C=1e3, degree=2)
-    y_rbf = svr_rbf.fit(X, y).predict(X)
-    y_lin = svr_lin.fit(X, y).predict(X)
-    y_poly = svr_poly.fit(X, y).predict(X)
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    hashtags = ['#gohawks']
 
+    def score_func(y_pred, y):
+        return np.mean(abs(y_pred - y))
 
+    scorer = make_scorer(score_func, greater_is_better=False)
+
+    for tag in hashtags:
+        with open(fileLocation(tag), encoding="utf8") as f:
+            firstTs = FIRST_TS[tag] // 3600 * 3600
+            idx1 = tsDiffHour(firstTs, PERIOD1)
+            idx2 = tsDiffHour(firstTs, PERIOD2) + 1
+            X = load_obj(tag + '_Q13')[:-1, :]
+            y = load_obj(tag + '_numTweetsInHour')[1:]
+
+            X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:, :]
+            y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:]
+
+            # svr_rbf = SVR(kernel='rbf', gamma=0.1, C=0.1)
+            # svr_lin = SVR(kernel='linear', C=0.1)
+            svr_poly = SVR(kernel='poly', degree=2, C=1)
+
+            # score1_1 = cross_val_score(svr_rbf, X=X1, y=y1, scoring=scorer, cv=10)
+            # score1_2 = cross_val_score(svr_rbf, X=X2, y=y2, scoring=scorer, cv=10)
+            # score1_3 = cross_val_score(svr_rbf, X=X3, y=y3, scoring=scorer, cv=10)
+
+            # score2_1 = cross_val_score(svr_lin, X=X1, y=y1, scoring=scorer, cv=10)
+            # score2_2 = cross_val_score(svr_lin, X=X2, y=y2, scoring=scorer, cv=10)
+            # score2_3 = cross_val_score(svr_lin, X=X3, y=y3, scoring=scorer, cv=10)
+
+            score3_1 = cross_val_score(svr_poly, X=X1, y=y1, scoring=scorer, cv=10)
+            score3_2 = cross_val_score(svr_poly, X=X2, y=y2, scoring=scorer, cv=10)
+            score3_3 = cross_val_score(svr_poly, X=X3, y=y3, scoring=scorer, cv=10)
+
+            # print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
+            # print(np.mean(score2_1), np.mean(score2_2), np.mean(score2_3), '\n')
+            print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
+            #
+            # print(score1_1, np.mean(score1_1))
+            # print(score1_2, np.mean(score1_2))
+            # print(score1_3, np.mean(score1_3))
+            #
+            # print(score2_1, np.mean(score2_1))
+            # print(score2_2, np.mean(score2_2))
+            # print(score2_3, np.mean(score2_3))
+            #
+            # print(score3_1, np.mean(score3_1))
+            # print(score3_2, np.mean(score3_2))
+            # print(score3_3, np.mean(score3_3))
 
 
 if __name__ == '__main__':
-    # hashtags = ['#gohawks', '#sb49', '#gopatriots', '#patriots', "#superbowl", "#nfl"]
-    # for cate in hashtags:
-    #     Q1_1(cate)
-    # Q1_1("#superbowl")
-    # Q1_1_plot("#superbowl")
-    # Q1_1("#nfl")
-    # Q1_1_plot("#nfl")
-    # Q1_2()
-    Q1_3()
+    Q1_4()
