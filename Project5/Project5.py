@@ -373,6 +373,43 @@ def Q1_4():
             # print(score3_2, np.mean(score3_2))
             # print(score3_3, np.mean(score3_3))
 
+def match(l):
+    if (re.match('.*WA.*', l) or re.match('.*Wash.*', l)):
+        return 0
+    if (re.match('.*MA.*', l) or re.match('.*Mass.*', l)):
+        return 1
+    return -1
+
+def createQ2Data():
+    loc = np.array([]) #y
+    text_data = np.array([]) #X
+    with open(fileLocation(tag), encoding="utf8") as f:
+        tweets = f.readlines()
+
+        count = 0 
+        count_loc = 0
+        for tweet in tweets:
+    #         if count%10000 == 0:
+    #             print('count ',count)
+            count+=1
+            t = json.loads(tweet)
+            location = t['tweet']['user']['location']
+            mat_res = match(location)
+            if mat_res != -1:
+    #             if count_loc%1000 == 0:
+    #                 print('count_loc ',count_loc)
+                count_loc += 1
+                text = t['tweet']['text']
+                loc = np.append(loc, mat_res)
+                text_data = np.append(text_data, text)
+
+    save_obj('text_data_Q2', text_data)
+    save_obj('label_Q2', loc)
+
+def Q2():
+    text_data = load_obj('text_data_Q2')
+    y = load_obj('label_Q2')
+    print(text_data.size, y.size)
 
 if __name__ == '__main__':
-    Q1_4()
+    Q2()
