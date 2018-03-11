@@ -5,16 +5,16 @@ warnings.warn = warn
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import json
-import pickle
-import matplotlib.pyplot as plt
-import numpy as np
 import statsmodels.api as stats_api 
 from sklearn.svm import SVR
-from datetime import date
+import numpy as np
 from math import sqrt
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer
-
+from sklearn.ensemble import RandomForestClassifier
+from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
+get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
+metrics, plot_ROC
 
 FIRST_TS = {
     "#gohawks": 1421222681,
@@ -36,51 +36,6 @@ LAST_TS = {
 
 PERIOD1 = 1422806400    # PST: 2015 Feb. 1, 8:00 a.m.
 PERIOD2 = 1422849600    # PST: 2015 Feb. 1, 8:00 p.m.
-
-
-
-def fileLocation(category):
-    return 'tweet_data/tweets_%s.txt' % category
-
-
-def save_obj(name, obj):
-    with open('obj/'+ name + '.pkl', 'wb') as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-
-
-def load_obj(name):
-    with open('obj/' + name + '.pkl', 'rb') as f:
-        return pickle.load(f)
-
-
-def tsDiffHour(startTs:int, endTs:int) -> int:
-    """
-    startTs: the rounded(down) timestamp of the first tweet
-    endTs: the raw timestamp of a tweet
-    :return: the hour difference between startTs and endTs(0 -> ...)
-    """
-    return (endTs // 3600 * 3600 - startTs) // 3600
-
-
-def extractFirstTsAndLastTs():
-    """
-    This function is only called once to extract the first timestamp of each category.
-    Included for the completeness of code submission.
-    """
-    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
-    for category in hashtags:
-        with open(fileLocation(category), encoding="utf8") as f:
-            tweets = f.readlines()
-            firstTs = json.loads(tweets[0])['citation_date']
-            lastTs = firstTs
-            for t in tweets:
-                t = json.loads(t)
-                if t['citation_date'] < firstTs:
-                    firstTs = t['citation_date']
-                if t['citation_date'] > lastTs:
-                    lastTs = t['citation_date']
-            print(category, firstTs, lastTs)
-
 
 def Q1_1(category):
     with open(fileLocation(category), encoding="utf8") as f:
@@ -116,10 +71,8 @@ def Q1_1(category):
 def Q1_1_plot(category):
     hourCount = load_obj(category + '_numTweetsInHour')
     hours = [x for x in range(0, len(hourCount))]
-    plt.bar(hours, hourCount, label="Number of tweets per hour", color='g')
-    plt.xlabel('hours')
-    plt.ylabel('Number of tweets')
-    plt.show()
+    ys = [[hourCount, 'Number of tweets per hour']]
+    make_plot(hours, ys, bar=True, xlabel='hours', ylabel='Number of tweets')
 
 
 def Q1_2():
@@ -173,119 +126,6 @@ def Q1_2():
 
             print (result.summary())
             print ('=============================')
-
-# 
-# for function days_of_account
-# 
-month_num = {
-    'Jan': 1,
-    'Feb': 2,
-    'Mar': 3,
-    'Apr': 4,
-    'May': 5,
-    'Jun': 6,
-    'Jul': 7,
-    'Aug': 8,
-    'Sep': 9,
-    'Oct': 10,
-    'Nov': 11,
-    'Dec': 12
-}
-
-def days_of_account(t):
-    account_date = t['tweet']['user']['created_at'].split(' ')
-    post_date = t['tweet']['created_at'].split(' ')
-    d_account = date(int(account_date[5]), month_num[account_date[1]],
-                     int(account_date[2]))
-    d_post = date(int(post_date[5]), month_num[post_date[1]],
-                     int(post_date[2]))
-    return (d_post-d_account).days
-
-# 
-# feat = 'retweet', 'follower', 'mention' (for mention count sum), 
-# 'rank_score', 'passitivity' (rareness, as defined in report, for sum),
-# and 'tags' (for sum), 'author' (for unique author count)
-# 
-def get_feature(tweet, feat):
-    if feat == 'retweet':
-        return tweet['metrics']['citations']['total']
-    elif feat == 'follower':
-        return tweet['author']['followers']
-    elif feat == 'mention':
-        return len(tweet['tweet']['entities']['user_mentions'])
-    elif feat == 'rank_score':
-        return tweet['metrics']['ranking_score']
-    elif feat == 'passitivity':
-        days_account = days_of_account(tweet)
-        followers = tweet['tweet']['user']['followers_count']
-        res = days_account/(1.0+followers)
-        return res
-    elif feat == 'tags':
-        res = len(tweet['tweet']['entities']['hashtags'])
-        return res
-    elif feat == 'author':
-        return tweet['author']['name']
-
-
-# 
-# create X (new features) for Q1_3
-# 
-def createData():
-    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
-    for tag in hashtags:
-        with open(fileLocation(tag), encoding="utf8") as f:
-            tweets = f.readlines()
-            firstTs = FIRST_TS[tag]
-            firstTs = firstTs // 3600 * 3600
-            lastTs = LAST_TS[tag]
-            totalHours = tsDiffHour(firstTs, lastTs) + 1
-
-            mentionCount = [0] * totalHours
-            rankScore = [0] * totalHours
-            passitivity = [0] * totalHours
-            tags = [0] * totalHours
-            author = [0] * totalHours
-            uniq_author = {}
-
-            for tweet in tweets:
-                t = json.loads(tweet)
-                ts = t['citation_date']
-                hourDiff = tsDiffHour(firstTs, ts)
-                
-                mentionCount[hourDiff] += get_feature(t, 'mention')
-                rankScore[hourDiff] += get_feature(t, 'rank_score')
-                passitivity[hourDiff] += get_feature(t, 'passitivity')
-                tags[hourDiff] += get_feature(t, 'tags')
-                aut = get_feature(t, 'author')
-                if aut not in uniq_author:
-                    uniq_author[aut] = len(uniq_author)
-                    author[hourDiff] += 1
-            
-            X = np.array([mentionCount, rankScore, passitivity, tags, author])
-            X = X.transpose()
-            save_obj(tag + '_Q13', X)
-
-
-def make_plot(x, ys, scatter=False, xlabel=None, ylabel=None, 
-              xticks=None, grid=False, title=None, 
-              size_marker = 20, marker = '.'):
-    for y, label in ys:
-        if scatter:
-            plt.scatter(x, y, s=size_marker, marker=marker, label=label)
-        else:
-            plt.plot(x, y, label=label)
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
-    if xticks is not None:
-        plt.xticks(x)
-    plt.legend()
-    if grid == True:
-        plt.grid()
-    if title is not None:
-        plt.title(title)
-    plt.show() 
 
 
 def Q1_3():
@@ -372,5 +212,28 @@ def Q1_4():
             # print(score3_3, np.mean(score3_3))
 
 
+def Q2():
+    X = load_obj('X_Q2')
+    y = load_obj('label_Q2')
+
+    clf = RandomForestClassifier(max_features=50,random_state=20)
+
+    y_t_train, y_p_train, y_t_test, y_p_test, y_score_train, y_score_test \
+        = cross_val(clf, X, y, shuffle=True, score=True, verbose=True)
+
+    acc_test, rec_test, prec_test = metrics(y_t_test, y_p_test)
+    acc_train, rec_train, prec_train = metrics(y_t_train, y_p_train)
+    print('Test accuracy %0.4f, recall score %0.4f and precision score %.4f'
+          % (acc_test, rec_test, prec_test))
+    print('Train accuracy %0.4f, recall score %0.4f and precision score %.4f'
+          % (acc_train, rec_train, prec_train))
+
+    classnames = ['Washington', 'Massachusetts']
+
+    plot_confusion_matrix(y_t_test, y_p_test, classnames)
+
+    auc = plot_ROC(y_t_test, y_score_test)
+
 if __name__ == '__main__':
-    Q1_4()
+    Q2()
+
