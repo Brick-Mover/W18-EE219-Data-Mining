@@ -1,3 +1,9 @@
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 import json
 import pickle
 import matplotlib.pyplot as plt
@@ -5,7 +11,7 @@ import numpy as np
 import statsmodels.api as stats_api 
 from sklearn.svm import SVR
 from datetime import date
-import math
+from math import sqrt
 
 FIRST_TS = {
     "#gohawks": 1421222681,
@@ -83,7 +89,7 @@ def Q1_1(category):
 
         for tweet in tweets:
             t = json.loads(tweet)
-            ts = t['firstpost_date']
+            ts = t['citation_date']
             # count hour
             hourDiff = tsDiffHour(firstTs, ts)
             hourCount[hourDiff] += 1
@@ -114,10 +120,9 @@ def Q1_2():
     for category in hashtags: 
         with open(fileLocation(category), encoding="utf8") as f:
             tweets = f.readlines()
-            firstTs = json.loads(tweets[0])['firstpost_date']
+            firstTs = FIRST_TS[category]
             firstTs = firstTs // 3600 * 3600
-            lastTs = json.loads(tweets[-1])['firstpost_date']
-            # total hour 
+            lastTs = LAST_TS[category]
             totalHours = tsDiffHour(firstTs, lastTs) + 1
 
             hourCount = [0] * totalHours
@@ -129,7 +134,7 @@ def Q1_2():
             users = set()
             for tweet in tweets:
                 t = json.loads(tweet)
-                ts = t['firstpost_date']
+                ts = t['citation_date']
                 # count hour
                 hourDiff = tsDiffHour(firstTs, ts)
                 hourCount[hourDiff] += 1
@@ -154,6 +159,11 @@ def Q1_2():
             X = dataset [:-1, 0:5]
             
             result = stats_api.OLS(y,X).fit()
+            y_predict = result.predict(X)
+            rmse = stats_api.tools.eval_measures.rmse(y,y_predict)
+            print ('category: ', category)
+            print ('rmse: ' ,rmse)
+
             print (result.summary())
             print ('=============================')
 
@@ -261,7 +271,7 @@ def Q1_3():
         sum_err = np.sum(sum_err)
         print(res.summary())
     #     print(sum_err)
-        rmse = math.sqrt(sum_err/len(y_resid))
+        rmse = sqrt(sum_err/len(y_resid))
         print('%s has RMSE of %.3f' % (tag, rmse))
         print ('=============================')
 
@@ -284,4 +294,5 @@ if __name__ == '__main__':
     # Q1_1_plot("#superbowl")
     # Q1_1("#nfl")
     # Q1_1_plot("#nfl")
+    # Q1_2()
     Q1_3()
