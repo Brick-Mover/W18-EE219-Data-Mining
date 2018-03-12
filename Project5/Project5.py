@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import json
 import statsmodels.api as stats_api 
-from sklearn.svm import SVR
+from sklearn.svm import LinearSVR, SVR
 import numpy as np
 from math import sqrt
 from sklearn.model_selection import cross_val_score
@@ -16,6 +16,7 @@ from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAn
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
 metrics, plot_ROC, FIRST_TS, LAST_TS
 from sklearn.ensemble import RandomForestRegressor
+
 
 
 PERIOD1 = 1422806400    # PST: 2015 Feb. 1, 8:00 a.m.
@@ -165,26 +166,23 @@ def Q1_4():
             X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:, :]
             y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:]
 
-            rfr = RandomForestRegressor(criterion='mae')
-            score1_1 = cross_val_score(rfr, X=X1, y=y1, scoring=scorer, cv=10)
-            score1_2 = cross_val_score(rfr, X=X2, y=y2, scoring=scorer, cv=10)
-            score1_3 = cross_val_score(rfr, X=X3, y=y3, scoring=scorer, cv=10)
-            print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
-
-            # svr_rbf = SVR(kernel='rbf', gamma=0.1, C=0.1)
+            # rfr = RandomForestRegressor(criterion='mae')
+            rbf = SVR(kernel='rbf', gamma=0.1, C=10)
+            # lsvr = LinearSVR()
+            # rbf = SVR(kernel='rbf', gamma=0.1, C=0.1)
             # svr_lin = SVR(kernel='linear', C=0.1)
             # svr_poly = SVR(kernel='poly', degree=2, C=1, cache_size=7000)
 
-            # score1_1 = cross_val_score(svr_rbf, X=X1, y=y1, scoring=scorer, cv=10)
-            # score1_2 = cross_val_score(svr_rbf, X=X2, y=y2, scoring=scorer, cv=10)
-            # score1_3 = cross_val_score(svr_rbf, X=X3, y=y3, scoring=scorer, cv=10)
+            score1_1 = cross_val_score(rbf, X=X1, y=y1, scoring=scorer, cv=10)
+            score1_2 = cross_val_score(rbf, X=X2, y=y2, scoring=scorer, cv=10)
+            score1_3 = cross_val_score(rbf, X=X3, y=y3, scoring=scorer, cv=10)
 
             # score2_1 = cross_val_score(svr_lin, X=X1, y=y1, scoring=scorer, cv=10)
             # score2_2 = cross_val_score(svr_lin, X=X2, y=y2, scoring=scorer, cv=10)
             # score2_3 = cross_val_score(svr_lin, X=X3, y=y3, scoring=scorer, cv=10)
 
 
-            # print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
+            print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
             # print(np.mean(score2_1), np.mean(score2_2), np.mean(score2_3), '\n')
             # print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
             #
@@ -224,5 +222,5 @@ def Q2():
     auc = plot_ROC(y_t_test, y_score_test)
 
 if __name__ == '__main__':
-    Q1_2()
+    Q1_4()
 
