@@ -287,9 +287,8 @@ def cross_val(clf, X, y, shuffle=False, score=False, verbose=False):
     y_pred_train = np.array([])
     y_true_test = np.array([])
     y_pred_test = np.array([])
-    if score == True:
-        y_score_train = np.array([])
-        y_score_test = np.array([])
+    y_score_train = np.array([])
+    y_score_test = np.array([])
     X = np.array(X)
     y = np.array(y)
     epoch = 1
@@ -311,13 +310,14 @@ def cross_val(clf, X, y, shuffle=False, score=False, verbose=False):
         if score == True:
             sub_y_score_train = clf.predict_proba(X_train)
             sub_y_score_test = clf.predict_proba(X_test)
-            y_score_train = np.append(y_score_train, sub_y_score_train)
-            y_score_test = np.append(y_score_test, sub_y_score_test)
+        else:
+            sub_y_score_train = clf.decision_function(X_train)
+            sub_y_score_test = clf.decision_function(X_test)
+        y_score_train = np.append(y_score_train, sub_y_score_train)
+        y_score_test = np.append(y_score_test, sub_y_score_test)
 
-    if score == True:
-        return y_true_train, y_pred_train, y_true_test, y_pred_test, y_score_train, y_score_test
-    else:
-        return y_true_train, y_pred_train, y_true_test, y_pred_test
+    return y_true_train, y_pred_train, y_true_test, y_pred_test, y_score_train, y_score_test
+
 
 # 
 # calculate accuracy score and f1 score
@@ -333,8 +333,9 @@ def metrics(y_true, y_pred):
 # 
 def plot_ROC(yTrue, yScore, title='ROC Curve', rang=4, no_score=False):
     # pay attention here
-    yScore = yScore.reshape(len(yTrue), 2)
-    yScore = yScore[:,1]
+    if not no_score:
+        yScore = yScore.reshape(len(yTrue), 2)
+        yScore = yScore[:,1]
     fpr, tpr, _ = roc_curve(yTrue, yScore)
     roc_auc = auc(fpr, tpr)
     lw=2

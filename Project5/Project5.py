@@ -12,6 +12,11 @@ from math import sqrt
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.tree import DecisionTreeClassifier
 from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
 metrics, plot_ROC, FIRST_TS, LAST_TS
@@ -200,27 +205,41 @@ def Q1_4():
 
 
 def Q2():
+
     X = load_obj('X_Q2')
     y = load_obj('label_Q2')
 
-    clf = RandomForestClassifier(max_features=50,random_state=20)
+    rf = RandomForestClassifier(max_features=50,random_state=20)
+    svc = svm.LinearSVC(C=10)
+    lr = LogisticRegression(random_state=20)
+    knn = KNeighborsClassifier(n_neighbors=3)
+    mlp = MLPClassifier(solver='lbfgs', activation="relu", alpha=1e-4,hidden_layer_sizes=(200,400), random_state=1)
+    dt = DecisionTreeClassifier(random_state=20)
+    clfs = [rf, svc, lr, knn, mlp, dt]
+    clf_names = ['rf','svc','lr','knn','mlp','dt']
 
-    y_t_train, y_p_train, y_t_test, y_p_test, y_score_train, y_score_test \
-        = cross_val(clf, X, y, shuffle=True, score=True, verbose=True)
+    for clf, clf_name in zip(clfs, clf_names):
+        print(clf_name)
+        score = True
+        if clf_name == 'svc':
+            score = False
+        y_t_train, y_p_train, y_t_test, y_p_test, y_score_train, y_score_test \
+            = cross_val(clf, X, y, shuffle=True, score=score, verbose=True)
 
-    acc_test, rec_test, prec_test = metrics(y_t_test, y_p_test)
-    acc_train, rec_train, prec_train = metrics(y_t_train, y_p_train)
-    print('Test accuracy %0.4f, recall score %0.4f and precision score %.4f'
-          % (acc_test, rec_test, prec_test))
-    print('Train accuracy %0.4f, recall score %0.4f and precision score %.4f'
-          % (acc_train, rec_train, prec_train))
+        acc_test, rec_test, prec_test = metrics(y_t_test, y_p_test)
+        acc_train, rec_train, prec_train = metrics(y_t_train, y_p_train)
+        print('Test accuracy %0.4f, recall score %0.4f and precision score %.4f'
+              % (acc_test, rec_test, prec_test))
+        print('Train accuracy %0.4f, recall score %0.4f and precision score %.4f'
+              % (acc_train, rec_train, prec_train))
 
-    classnames = ['Washington', 'Massachusetts']
+        classnames = ['Washington', 'Massachusetts']
 
-    plot_confusion_matrix(y_t_test, y_p_test, classnames)
+        plot_confusion_matrix(y_t_test, y_p_test, classnames)
 
-    auc = plot_ROC(y_t_test, y_score_test)
+        plot_ROC(y_t_test, y_score_test, no_score=(not score))
 
 if __name__ == '__main__':
+    Q2()
     Q1_4()
 
