@@ -19,7 +19,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
-metrics, plot_ROC, FIRST_TS, LAST_TS
+metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
 from sklearn.ensemble import RandomForestRegressor
 
 
@@ -153,12 +153,6 @@ def Q1_3():
 
 def Q1_4():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
-    hashtags = ['#gohawks']
-
-    def score_func(y_pred, y):
-        return np.mean(abs(y_pred - y))
-
-    scorer = make_scorer(score_func, greater_is_better=False)
 
     for tag in hashtags:
         with open(fileLocation(tag), encoding="utf8") as f:
@@ -171,23 +165,30 @@ def Q1_4():
             X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:, :]
             y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:]
 
-            # rfr = RandomForestRegressor(criterion='mae')
-            rbf = SVR(kernel='rbf', gamma=0.1, C=10)
-            # lsvr = LinearSVR()
-            # rbf = SVR(kernel='rbf', gamma=0.1, C=0.1)
-            # svr_lin = SVR(kernel='linear', C=0.1)
-            # svr_poly = SVR(kernel='poly', degree=2, C=1, cache_size=7000)
+            rfr = RandomForestRegressor(criterion='mae')
+            rbf = SVR(kernel='rbf', gamma=0.1, C=1)
+            lsvr = LinearSVR()
 
-            score1_1 = cross_val_score(rbf, X=X1, y=y1, scoring=scorer, cv=10)
-            score1_2 = cross_val_score(rbf, X=X2, y=y2, scoring=scorer, cv=10)
-            score1_3 = cross_val_score(rbf, X=X3, y=y3, scoring=scorer, cv=10)
+            score1_1 = cross_val2(rbf, X=X1, y=y1)
+            score1_2 = cross_val2(rbf, X=X2, y=y2)
+            score1_3 = cross_val2(rbf, X=X3, y=y3)
+            print(tag, 'rbf', np.mean(score1_1), np.mean(score1_2), np.mean(score1_3))
+
+            score2_1 = cross_val2(rfr, X=X1, y=y1)
+            score2_2 = cross_val2(rfr, X=X2, y=y2)
+            score2_3 = cross_val2(rfr, X=X3, y=y3)
+            print(tag, 'rfr', np.mean(score2_1), np.mean(score2_2), np.mean(score2_3))
+
+            score3_1 = cross_val2(lsvr, X=X1, y=y1)
+            score3_2 = cross_val2(lsvr, X=X2, y=y2)
+            score3_3 = cross_val2(lsvr, X=X3, y=y3)
+            print(tag, 'lsvr', np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
 
             # score2_1 = cross_val_score(svr_lin, X=X1, y=y1, scoring=scorer, cv=10)
             # score2_2 = cross_val_score(svr_lin, X=X2, y=y2, scoring=scorer, cv=10)
             # score2_3 = cross_val_score(svr_lin, X=X3, y=y3, scoring=scorer, cv=10)
 
-
-            print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
+            # print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
             # print(np.mean(score2_1), np.mean(score2_2), np.mean(score2_3), '\n')
             # print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
             #
@@ -240,6 +241,5 @@ def Q2():
         plot_ROC(y_t_test, y_score_test, no_score=(not score))
 
 if __name__ == '__main__':
-    Q2()
     Q1_4()
 

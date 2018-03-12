@@ -319,6 +319,30 @@ def cross_val(clf, X, y, shuffle=False, score=False, verbose=False):
     return y_true_train, y_pred_train, y_true_test, y_pred_test, y_score_train, y_score_test
 
 
+def cross_val2(clf, X, y, shuffle=False, score=False, verbose=False):
+    kf = KFold(n_splits=10, shuffle = shuffle)
+
+    y_true_test = np.array([])
+    y_pred_test = np.array([])
+
+    X = np.array(X)
+    y = np.array(y)
+    epoch = 1
+    for train_index, test_index in kf.split(X):
+        if verbose:
+            print('epoch', epoch)
+        epoch += 1
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        clf.fit(X_train, y_train)
+        sub_y_pred_test = clf.predict(X_test)
+
+        y_true_test = np.append(y_true_test, y_test)
+        y_pred_test = np.append(y_pred_test, sub_y_pred_test)
+
+    return np.mean(np.abs(y_pred_test - y_true_test))
+
+
 # 
 # calculate accuracy score and f1 score
 # 
