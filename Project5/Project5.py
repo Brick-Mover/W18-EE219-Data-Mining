@@ -240,6 +240,29 @@ def Q2():
 
         plot_ROC(y_t_test, y_score_test, no_score=(not score))
 
+def Q3():
+    import nltk
+    nltk.download('vader_lexicon')
+    from nltk.sentiment.vader import SentimentIntensityAnalyzer
+    sid = SentimentIntensityAnalyzer()
+
+    hashtags = ['#gohawks', '#gopatriots']
+    for tag in hashtags: 
+        with open(fileLocation(tag), encoding="utf8") as f:
+            print ('tag: ',tag)
+            tweets = f.readlines()
+            #for tweet in tweets:
+            tweet = tweets[0]
+            t = json.loads(tweet)
+            title = t ['title']
+            print (title)
+            ss = sid.polarity_scores(title)
+            for k in ss:
+                print(k+': '+str(ss[k])+', ', end='')
+            print()
+            print()
+
+
 if __name__ == '__main__':
-    Q1_4()
+    Q3()
 
