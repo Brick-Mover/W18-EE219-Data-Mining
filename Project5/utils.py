@@ -375,3 +375,95 @@ def plot_ROC(yTrue, yScore, title='ROC Curve', rang=4, no_score=False):
     plt.close()
 
     return roc_auc
+
+TS_test = np.array([
+[1422554405, 1422575945],
+[1422817200, 1422838799],
+[1422874802, 1422896399],
+[1422223204, 1422244781],
+[1422406820, 1422428389],
+[1422810001, 1422831599],
+[1422943203, 1422964632],
+[1422489605, 1422507351],
+[1422813600, 1422835199],
+[1423166443, 1423187958],
+])
+
+TS_train =np.array([
+    [1419804875,1423304269],
+    [1419999683,1423335336],
+    [1421238675,1423335336],
+    [1420835445,1423295675],
+    [1419805279,1423335300],
+    [1419866833,1423332008]
+])
+
+def createTrainDataQ1_5():
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    dim = 575
+    X_tr = np.zeros([dim,5])
+    y_tr = np.zeros(dim)
+    for tag in hashtags:
+        X = load_obj(tag+'_Q13')[:dim,:]
+        y = load_obj(tag+'_numTweetsInHour')[:dim]
+        X_tr = X_tr + X
+        y_tr = y_tr + y
+        print(np.amax(y))
+        print(X.shape, len(y))
+    X_tr = np.insert(X_tr, 0, y_tr, axis = 1)
+    X_train = X_tr[:570]+X_tr[1:571]+X_tr[2:572]+X_tr[3:573]+X_tr[4:574]
+    y_train = y_tr[5:]
+    save_obj('Q1_5XTrain',X_train)
+    save_obj('Q1_5yTrain',y_train)
+
+def hour(ft, lt):
+    return math.ceil((lt-ft)/3600)
+
+def createTestDataQ1_5():
+    files = ['sample1_period1.txt', 'sample2_period2.txt', 'sample3_period3.txt',
+            'sample4_period1.txt', 'sample5_period1.txt', 'sample6_period2.txt',
+            'sample7_period3.txt', 'sample8_period1.txt', 'sample9_period2.txt',
+            'sample10_period3.txt']
+    for file,ind in zip(files, range(10)):
+        file_name = 'test_data/'+file
+        with open(file_name, encoding="utf8") as f:
+
+            tweets = f.readlines()
+            firstTs = TS_test[ind][0]
+            lastTs = TS_test[ind][1]
+            totalHours = hour(firstTs, lastTs)
+            print(file[:7], totalHours)
+
+            tweetCount = [0] * totalHours
+            mentionCount = [0] * totalHours
+            rankScore = [0] * totalHours
+            passitivity = [0] * totalHours
+            tags = [0] * totalHours
+            author = [0] * totalHours
+            uniq_author = {}
+
+            cnt = 0
+            for tweet in tweets:
+                if cnt == 10:
+                    break
+                cnt += 1
+                t = json.loads(tweet)
+                ts = t['firstpost_date']
+                hourDiff = hour(firstTs, ts)
+
+                tweetCount [hourDiff] += 1
+                mentionCount[hourDiff] += get_feature(t, 'mention')
+                rankScore[hourDiff] += get_feature(t, 'rank_score')
+                passitivity[hourDiff] += get_feature(t, 'passitivity')
+                tags[hourDiff] += get_feature(t, 'tags')
+                aut = get_feature(t, 'author')
+                if aut not in uniq_author:
+                    uniq_author[aut] = len(uniq_author)
+                    author[hourDiff] += 1
+
+            X = np.array([tweetCount, mentionCount, rankScore, passitivity, tags, author])
+            X = X.transpose()
+            y = np.array(tweetCount)
+            save_obj(file[:7]+'X',X)
+            save_obj(file[:7]+'y',y)
+            print(X.shape, y.shape)
