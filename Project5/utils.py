@@ -444,14 +444,12 @@ def createTestDataQ1_5():
 
             cnt = 0
             for tweet in tweets:
-                if cnt == 10:
-                    break
                 cnt += 1
                 t = json.loads(tweet)
                 ts = t['firstpost_date']
-                hourDiff = hour(firstTs, ts)
+                hourDiff = hour(firstTs, ts)-1
 
-                tweetCount [hourDiff] += 1
+                tweetCount[hourDiff] += 1
                 mentionCount[hourDiff] += get_feature(t, 'mention')
                 rankScore[hourDiff] += get_feature(t, 'rank_score')
                 passitivity[hourDiff] += get_feature(t, 'passitivity')
@@ -465,11 +463,12 @@ def createTestDataQ1_5():
             X = X.transpose()
             y = np.array(tweetCount)
             X_test = np.sum(X[:5,:],axis=0)
+            print(y)
             if file[:7] == 'sample8':
                 y_test=y[4:]
             else:
                 y_test = y[5:]
-            save_obj(file[:7]+'X',X_test)
-            save_obj(file[:7]+'y',y_test)
+            save_obj(file[:6]+str(ind+1)+'X',X_test)
+            save_obj(file[:6]+str(ind+1)+'y',y_test)
             print(X.shape, y.shape)
             print(X_test.shape, y_test.shape)
