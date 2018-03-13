@@ -21,6 +21,8 @@ from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAn
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
 metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
 from sklearn.ensemble import RandomForestRegressor
+import matplotlib.pyplot as plt 
+import datetime
 
 
 
@@ -246,22 +248,44 @@ def Q3():
     from nltk.sentiment.vader import SentimentIntensityAnalyzer
     sid = SentimentIntensityAnalyzer()
 
-    hashtags = ['#gohawks', '#gopatriots']
+    hashtags = ['#gohawks', '#gopatriots', '#patriots']
     for tag in hashtags: 
         with open(fileLocation(tag), encoding="utf8") as f:
             print ('tag: ',tag)
-            tweets = f.readlines()
-            #for tweet in tweets:
-            tweet = tweets[0]
-            t = json.loads(tweet)
-            title = t ['title']
-            print (title)
-            ss = sid.polarity_scores(title)
-            for k in ss:
-                print(k+': '+str(ss[k])+', ', end='')
-            print()
-            print()
 
+            firstTs = FIRST_TS[tag]
+            firstTs = firstTs // 3600 * 3600
+            lastTs = LAST_TS[tag]
+            totalHours = tsDiffHour(firstTs, lastTs) + 1
+
+            neg_sentiments = [0] * totalHours
+            pos_sentiments = [0] * totalHours
+            neu_sentiments = [0] * totalHours
+            hourCount = [0] * totalHours
+
+            tweets = f.readlines()
+            for tweet in tweets:
+                t = json.loads(tweet)
+                ts = t['citation_date']
+                date = datetime.datetime.fromtimestamp(t['citation_date'])
+                title = t ['title']
+                hourDiff = tsDiffHour(firstTs, ts)
+                hourCount[hourDiff] += 1
+                ss = sid.polarity_scores(title)
+                h_r = hourCount[hourDiff]
+                neg_sentiments[hourDiff] = (neg_sentiments[hourDiff] * (h_r-1) + ss['neg'])/h_r
+                pos_sentiments[hourDiff] = (pos_sentiments[hourDiff] * (h_r-1) + ss['pos'])/h_r
+                neu_sentiments[hourDiff] = (neu_sentiments[hourDiff] * (h_r-1) + ss['neu'])/h_r
+
+            # plot sentiments vs time (hour from beginning)
+            ys = [[neg_sentiments, 'negative sentiment'],
+                [pos_sentiments, 'positive sentiment']]
+            x_plt = range(0, totalHours)
+            x_label = 'time'
+            y_label = 'sentiment'
+            title = 'sentiment vs time for '+tag
+            make_plot(x_plt, ys, scatter=False, xlabel=x_label,
+                     ylabel=y_label, title=title)
 
 if __name__ == '__main__':
     Q3()
