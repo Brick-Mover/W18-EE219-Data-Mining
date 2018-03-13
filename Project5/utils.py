@@ -464,6 +464,12 @@ def createTestDataQ1_5():
             X = np.array([tweetCount, mentionCount, rankScore, passitivity, tags, author])
             X = X.transpose()
             y = np.array(tweetCount)
-            save_obj(file[:7]+'X',X)
-            save_obj(file[:7]+'y',y)
+            X_test = np.sum(X[:5,:],axis=0)
+            if file[:7] == 'sample8':
+                y_test=y[4:]
+            else:
+                y_test = y[5:]
+            save_obj(file[:7]+'X',X_test)
+            save_obj(file[:7]+'y',y_test)
             print(X.shape, y.shape)
+            print(X_test.shape, y_test.shape)
