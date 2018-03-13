@@ -19,7 +19,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 from utils import fileLocation, save_obj, load_obj, tsDiffHour, extractFirstTsAndLastTs, \
 get_feature, createData, make_plot, createQ2Data, plot_confusion_matrix, cross_val, \
-metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
+metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2, createTrainDataQ1_5, X_prevHour, \
+createTestDataQ1_5
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt 
 import datetime
@@ -206,6 +207,32 @@ def Q1_4():
             # print(score3_2, np.mean(score3_2))
             # print(score3_3, np.mean(score3_3))
 
+def Q1_5():
+    X_train = load_obj('Q1_5XTrain')
+    y_train = load_obj('Q1_5yTrain')
+    X1_train = load_obj('Q1_5X1Train')[:574,:]
+    y1_train = load_obj('Q1_5y1Train')[1:]
+    print(X_train.shape, y_train.shape)
+    print(X1_train.shape, y1_train.shape)
+    clf = RandomForestRegressor(criterion='mae')
+    clf1 = RandomForestRegressor(criterion='mae')
+    clf.fit(X_train, y_train)
+    clf1.fit(X1_train, y1_train)
+    
+    files = ['sample1_period1.txt', 'sample2_period2.txt', 'sample3_period3.txt',
+            'sample4_period1.txt', 'sample5_period1.txt', 'sample6_period2.txt',
+            'sample7_period3.txt', 'sample8_period1.txt', 'sample9_period2.txt',
+            'sample10_period3.txt']
+    for file,ind in zip(files, range(10)):
+        X_f = file[:6]+str(ind+1)+'X'
+        y_f = file[:6]+str(ind+1)+'y'
+        X_test = load_obj(X_f)
+        y_test = load_obj(y_f)
+        print(file, X_test.shape, y_test.shape)
+#         print(X_test, y_test)
+        y_pred = clf.predict(X_test.reshape(1,-1))
+        y1_pred = clf1.predict(X_prevHour[ind].reshape(1,-1))
+        print(y_test, y_pred, y1_pred)
 
 def Q2():
 
@@ -288,5 +315,5 @@ def Q3():
                      ylabel=y_label, title=title)
 
 if __name__ == '__main__':
-    Q3()
+    Q1_5()
 
