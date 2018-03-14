@@ -23,6 +23,7 @@ metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt 
 import datetime
+from textblob import TextBlob
 
 
 
@@ -287,6 +288,107 @@ def Q3():
             make_plot(x_plt, ys, scatter=False, xlabel=x_label,
                      ylabel=y_label, title=title)
 
+def Q3_jack():
+    hashtags = ['#gohawks','#patriots']
+    num_of_positive_hawks = [0] 
+    num_of_negative_hawks = [0] 
+    num_of_positive_patriots = [0]
+    num_of_negative_patriots = [0] 
+    totalHoursMin = 999999;
+
+    for category in hashtags: 
+        with open(fileLocation(category), encoding="utf8") as f:
+            tweets = f.readlines() #read all lines
+            firstTs = FIRST_TS[category]
+            firstTs = firstTs // 3600 * 3600
+            lastTs = LAST_TS[category]
+            totalHours = tsDiffHour(firstTs, lastTs) + 1
+            if totalHours < totalHoursMin:
+                totalHoursMin = totalHours
+            hourCount = [0] * totalHours 
+            if category == '#gohawks':
+                num_of_positive_hawks = [0] * totalHours
+                num_of_negative_hawks = [0] * totalHours
+            else:
+                num_of_positive_patriots = [0] * totalHours
+                num_of_negative_patriots = [0] * totalHours               
+
+            #for tweet in tweets:
+            for i in range(0,len(tweets)):
+                tweet = tweets[i]
+                t = json.loads(tweet)
+                ts = t['citation_date']
+                date = datetime.datetime.fromtimestamp(t['citation_date'])
+                title = t ['title']
+                hourDiff = tsDiffHour(firstTs, ts)
+                hourCount[hourDiff] += 1 # number
+                if category=='#gohawks':
+                    if sentiment(tweet) is 'positive':
+                        num_of_positive_hawks[hourDiff] += 1
+                    elif sentiment(tweet) is 'negative':
+                        num_of_negative_hawks[hourDiff] += 1
+                else:
+                    if sentiment(tweet) is 'positive':
+                        num_of_positive_patriots[hourDiff] += 1
+                    elif sentiment(tweet) is 'negative':
+                        num_of_negative_patriots[hourDiff] += 1                 
+    result_positive = [0] * totalHours
+    result_negative = [0] * totalHours
+
+    #the perspective of hawks
+    for i in range (0, totalHoursMin): #totalHours
+        result_positive[i] = num_of_positive_hawks[i] + num_of_negative_patriots[i]
+        result_negative[i] = num_of_positive_patriots[i] + num_of_negative_hawks[i]
+
+
+
+
+    ys = [[result_positive, 'positive sentiment'],
+        [result_negative, 'negative sentiment']]
+    x_plt = range(0, totalHours)
+    x_label = 'time'
+    y_label = 'sentiment'
+    title = 'sentiment vs time for hawks'
+    make_plot(x_plt, ys, scatter=False, xlabel=x_label,
+             ylabel=y_label, title=title)
+
+
+
+    s = """for tag in hashtags:
+
+        num_of_positive = 0
+        num_of_negative = 0
+        num_of_nuetral = 0
+        for tweet in somedata[hashtag] #? time scope
+            if sentiment(tweet) is 'positive':
+                num_of_positive += 1
+            elif sentiment(tweet) is 'negative':
+                num_of_negative += 1
+
+        result[tag + "_positive"] = num_of_positive
+        result[tag + "_negative"] = num_of_negative
+
+    #from gohawks perspective
+    total_negatives = result["#gohawks_negative"] + result["#gopatriots_positive"]
+    total_positives = result["#gohawks_positive"] + result["#gopatriots_negative"] """
+
+
+def sentiment(tweet):
+    testimonial = TextBlob(tweet)
+    if TextBlob(tweet).sentiment.polarity > 0:
+        return 'positive'
+    elif TextBlob(tweet).sentiment.polarity == 0:
+        return 'neutural'
+    else:
+        return 'negative'
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
-    Q3()
+    Q3_jack()
 
