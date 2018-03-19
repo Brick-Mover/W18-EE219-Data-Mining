@@ -23,8 +23,8 @@ metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt 
 import datetime
-# from textblob import TextBlob
-
+from textblob import TextBlob
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 PERIOD1 = 1422806400    # PST: 2015 Feb. 1, 8:00 a.m.
@@ -426,6 +426,31 @@ def Q3_jack():
     total_negatives = result["#gohawks_negative"] + result["#gopatriots_positive"]
     total_positives = result["#gohawks_positive"] + result["#gopatriots_negative"] """
 
+def Q3_haox():
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+    time1 = []
+    time2 = []
+    time3 = []
+    for tag in hashtags:
+        print(tag)
+        with open(fileLocation(tag), encoding="utf8") as f:
+            tweets = f.readlines()
+            for tweet in tweets:
+                tweet = json.loads(tweet)
+                time = tweet['citation_date']
+                content = tweet['title']
+                if time < PERIOD1:
+                    time1.append(content)
+                elif time < PERIOD2:
+                    time2.append(content)
+                else:
+                    time3.append(content)
+
+    for t in [time1, time2, time3]:
+        print(len(t))
+        tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=20,stop_words='english')
+        tfidf_vectorizer.fit_transform(t)
+        print (tfidf_vectorizer.vocabulary_.keys())
 
 def sentiment(tweet):
     testimonial = TextBlob(tweet)
@@ -445,4 +470,5 @@ def sentiment(tweet):
 
 if __name__ == '__main__':
     Q1_4()
+    Q3_haox()
 
