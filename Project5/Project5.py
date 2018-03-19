@@ -23,7 +23,7 @@ metrics, plot_ROC, FIRST_TS, LAST_TS, cross_val2
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt 
 import datetime
-from textblob import TextBlob
+# from textblob import TextBlob
 
 
 
@@ -157,6 +157,14 @@ def Q1_3():
 def Q1_4():
     hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
 
+    rfr = RandomForestRegressor(criterion='mae')
+    rbf = SVR(kernel='rbf', gamma=0.1, C=1)
+    lsvr = LinearSVR()
+
+    P1 = np.array([0.0, 0.0, 0.0])
+    P2 = np.array([0.0, 0.0, 0.0])
+    P3 = np.array([0.0, 0.0, 0.0])
+
     for tag in hashtags:
         with open(fileLocation(tag), encoding="utf8") as f:
             firstTs = FIRST_TS[tag] // 3600 * 3600
@@ -168,45 +176,91 @@ def Q1_4():
             X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:, :]
             y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:]
 
-            rfr = RandomForestRegressor(criterion='mae')
-            rbf = SVR(kernel='rbf', gamma=0.1, C=1)
-            lsvr = LinearSVR()
-
             score1_1 = cross_val2(rbf, X=X1, y=y1)
             score1_2 = cross_val2(rbf, X=X2, y=y2)
             score1_3 = cross_val2(rbf, X=X3, y=y3)
-            print(tag, 'rbf', np.mean(score1_1), np.mean(score1_2), np.mean(score1_3))
-
+            print('\\'+tag, '&', 'Random Forest Regressor', '&', '%.3f' % np.mean(score1_1), '&', '%.3f' % np.mean(score1_2), '&', '%.3f' % np.mean(score1_3), '\\\\')
+            print('\\hline')
             score2_1 = cross_val2(rfr, X=X1, y=y1)
             score2_2 = cross_val2(rfr, X=X2, y=y2)
             score2_3 = cross_val2(rfr, X=X3, y=y3)
-            print(tag, 'rfr', np.mean(score2_1), np.mean(score2_2), np.mean(score2_3))
-
+            print('\\'+tag, '&', 'Support Vector Regressor', '&', '%.3f' % np.mean(score2_1), '&', '%.3f' % np.mean(score2_2), '&', '%.3f' % np.mean(score2_3), '\\\\')
+            print('\\hline')
             score3_1 = cross_val2(lsvr, X=X1, y=y1)
             score3_2 = cross_val2(lsvr, X=X2, y=y2)
             score3_3 = cross_val2(lsvr, X=X3, y=y3)
-            print(tag, 'lsvr', np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
+            print('\\'+tag,'&','Linear SVR', '&','%.3f' % np.mean(score3_1),'&', '%.3f' % np.mean(score3_2),'&', '%.3f' % np.mean(score3_3), '\\\\')
+            print('\\hline')
 
-            # score2_1 = cross_val_score(svr_lin, X=X1, y=y1, scoring=scorer, cv=10)
-            # score2_2 = cross_val_score(svr_lin, X=X2, y=y2, scoring=scorer, cv=10)
-            # score2_3 = cross_val_score(svr_lin, X=X3, y=y3, scoring=scorer, cv=10)
+            P1 += np.array([np.mean(score1_1), np.mean(score1_2), np.mean(score1_3)])
+            P2 += np.array([np.mean(score2_1), np.mean(score2_2), np.mean(score2_3)])
+            P3 += np.array([np.mean(score3_1), np.mean(score3_2), np.mean(score3_3)])
 
-            # print(np.mean(score1_1), np.mean(score1_2), np.mean(score1_3), '\n')
-            # print(np.mean(score2_1), np.mean(score2_2), np.mean(score2_3), '\n')
-            # print(np.mean(score3_1), np.mean(score3_2), np.mean(score3_3), '\n')
-            #
-            # print(score1_1, np.mean(score1_1))
-            # print(score1_2, np.mean(score1_2))
-            # print(score1_3, np.mean(score1_3))
-            #
-            # print(score2_1, np.mean(score2_1))
-            # print(score2_2, np.mean(score2_2))
-            # print(score2_3, np.mean(score2_3))
-            #
-            # print(score3_1, np.mean(score3_1))
-            # print(score3_2, np.mean(score3_2))
-            # print(score3_3, np.mean(score3_3))
+    print(P1, P2, P3)
 
+def Q1_4_1():
+    hashtags = ['#gohawks', '#nfl', '#sb49', '#gopatriots', '#patriots', '#superbowl']
+
+    rfr = RandomForestRegressor(criterion='mae')
+    rbf = SVR(kernel='rbf', gamma=0.1, C=1)
+    lsvr = LinearSVR()
+
+    tag = '#gohawks'
+    with open(fileLocation(tag), encoding="utf8") as f:
+        firstTs = FIRST_TS[tag] // 3600 * 3600
+        idx1 = tsDiffHour(firstTs, PERIOD1)
+        idx2 = tsDiffHour(firstTs, PERIOD2) + 1
+        X = load_obj(tag + '_Q13')[:-1, :]
+        y = load_obj(tag + '_numTweetsInHour')[1:]
+
+        X1, X2, X3 = X[0:idx1, :], X[idx1:idx2, :], X[idx2:570, :]
+        y1, y2, y3 = y[0:idx1], y[idx1:idx2], y[idx2:570]
+
+
+    X1.fill(0.0)
+    X2.fill(0.0)
+    X3.fill(0.0)
+    y1 = np.array([0.0] * len(y1))
+    y2 = np.array([0.0] * len(y2))
+    y3 = np.array([0.0] * len(y3))
+
+    for tag in hashtags:
+        with open(fileLocation('#gohawks'), encoding="utf8") as f:
+            firstTs = FIRST_TS['#gohawks'] // 3600 * 3600
+            idx1 = tsDiffHour(firstTs, PERIOD1)
+            idx2 = tsDiffHour(firstTs, PERIOD2) + 1
+            X = load_obj(tag + '_Q13')[:-1, :]
+            y = load_obj(tag + '_numTweetsInHour')[1:]
+
+            X1 += X[0:idx1, :]
+            X2 += X[idx1:idx2, :]
+            X3 += X[idx2:570, :]
+            y1 += y[0:idx1]
+            y2 += y[idx1:idx2]
+            y3 += y[idx2:570]
+
+    rfr = RandomForestRegressor(criterion='mae')
+    rbf = SVR(kernel='rbf', gamma=0.1, C=1)
+    lsvr = LinearSVR()
+
+    score1_1 = cross_val2(rbf, X=X1, y=y1)
+    score1_2 = cross_val2(rbf, X=X2, y=y2)
+    score1_3 = cross_val2(rbf, X=X3, y=y3)
+    print('\\' + tag, '&', 'Random Forest Regressor', '&', '%.3f' % np.mean(score1_1), '&', '%.3f' % np.mean(score1_2),
+          '&', '%.3f' % np.mean(score1_3), '\\\\')
+    print('\\hline')
+    score2_1 = cross_val2(rfr, X=X1, y=y1)
+    score2_2 = cross_val2(rfr, X=X2, y=y2)
+    score2_3 = cross_val2(rfr, X=X3, y=y3)
+    print('\\' + tag, '&', 'Support Vector Regressor', '&', '%.3f' % np.mean(score2_1), '&', '%.3f' % np.mean(score2_2),
+          '&', '%.3f' % np.mean(score2_3), '\\\\')
+    print('\\hline')
+    score3_1 = cross_val2(lsvr, X=X1, y=y1)
+    score3_2 = cross_val2(lsvr, X=X2, y=y2)
+    score3_3 = cross_val2(lsvr, X=X3, y=y3)
+    print('\\' + tag, '&', 'Linear SVR', '&', '%.3f' % np.mean(score3_1), '&', '%.3f' % np.mean(score3_2), '&',
+          '%.3f' % np.mean(score3_3), '\\\\')
+    print('\\hline')
 
 def Q2():
 
@@ -390,5 +444,5 @@ def sentiment(tweet):
 
 
 if __name__ == '__main__':
-    Q3_jack()
+    Q1_4()
 
